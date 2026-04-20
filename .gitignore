@@ -1,0 +1,9 @@
+# Environment files (ignore everywhere)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Keep example templates committed
+!.env.example
+!**/.env.example
