@@ -1,1 +1,53 @@
-See product-vision.md in docs folder
+# SmartShop — Cursor Agent Configuration
+
+## Product Vision
+See docs/product-vision.md for the full product vision statement, How Might We statement, and Problem Framing Canvas insights.
+
+## Project Summary
+SmartShop is an app that compares grocery prices across nearby stores and factors in travel distance, helping budget-conscious shoppers find the best overall deal. The core AI capability uses text/image recognition to match equivalent items across stores and retrieve pricing data.
+
+## Team
+- Divya Bengali
+- Shreeya Koritala
+- Caroline Tapia
+- Terry Chen
+
+## Repository Structure
+```
+/
+├── docs/
+│   └── product-vision.md   # Shared product vision (source of truth)
+├── .cursorrules            # This file
+├── .gitignore              # Excludes .env files everywhere
+├── README.md               # Repo overview
+└── prototypes/
+    ├── divya/              # Divya's individual prototype
+    ├── shreeya/            # Shreeya's individual prototype
+    ├── caroline/           # Caroline's individual prototype
+    └── terry/              # Terry's individual prototype
+```
+
+Each prototype directory is independent — team members can use any stack they choose.
+
+## Conventions (update as team decisions are made)
+- Each prototype lives in prototypes/[yourname]/ and is self-contained
+- Never commit .env files — use .env.example to document required variables
+- Commit messages should be descriptive and reference what changed
+- Each prototype must include: front end, back end, database, and at least one AI API integration
+
+## AI Context & Constraints
+- Core user problem: comparing grocery prices + distance across multiple local stores
+- Key AI use case: matching equivalent products across stores from text or image input
+- Users are budget-conscious shoppers; UX should minimize friction and be immediately useful
+- Distance/travel tradeoff is a first-class feature, not an afterthought
+- Be careful with equivalent product matching — dietary restrictions mean substitutions aren't always acceptable
+
+## Tech Stack (to be updated as team decides)
+- Stack per prototype is up to the individual at this stage
+- AI API options: OpenAI, Anthropic Claude, Google Gemini, etc.
+- Consider: web scraping or store APIs for pricing, maps API for distance
+
+## What Good Code Looks Like Here
+- Suggestions should reflect the grocery price comparison domain
+- API keys must always come from environment variables, never hardcoded
+- Prototype bar is works on your laptop — prioritize clarity and speed over perfection
