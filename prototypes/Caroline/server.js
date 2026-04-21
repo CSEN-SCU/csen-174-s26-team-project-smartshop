@@ -12,6 +12,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 4000;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "";
 
 const CATEGORY_KEYWORDS = {
   groceries: ["milk", "eggs", "bread", "chicken", "rice", "apples", "bananas", "cereal", "turkey", "olive oil"],
@@ -102,6 +103,289 @@ const FALLBACK_MULTIPLIER = {
   "Greenline Grocer": 1.07,
   "Metro Hypermart": 0.95
 };
+
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+const GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+const GOOGLE_PLACES_NEARBY_NEW_URL = "https://places.googleapis.com/v1/places:searchNearby";
+const locationCache = new Map();
+
+/**
+ * Collector contract (architecture sketch):
+ * - id: unique source id
+ * - displayName: source label
+ * - collect({ items, maxDistance, userLocation }): returns normalized store option list
+ *
+ * Each real retailer implementation should fetch location-aware product prices, then map
+ * into this same shape so compare logic stays unchanged.
+ */
+function createMockCollector(store) {
+  return {
+    id: `mock-${store.name.toLowerCase().replace(/\s+/g, "-")}`,
+    displayName: `${store.name} (mock)`,
+    async collect({ items, maxDistance }) {
+      const option = calculateStoreOption(store, items);
+      if (option.distanceMi > maxDistance) {
+        return [];
+      }
+      return [
+        {
+          ...option,
+          source: "mock",
+          sourceId: this.id,
+          fetchedAt: new Date().toISOString()
+        }
+      ];
+    }
+  };
+}
+
+const collectors = STORE_CATALOG.map((store) => createMockCollector(store));
+
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function retailerMultiplier(name) {
+  const lower = name.toLowerCase();
+  if (lower.includes("whole foods")) return 1.2;
+  if (lower.includes("trader joe")) return 1.05;
+  if (lower.includes("walmart")) return 0.9;
+  if (lower.includes("costco")) return 0.88;
+  if (lower.includes("target")) return 0.98;
+  if (lower.includes("safeway")) return 1.03;
+  return 1;
+}
+
+async function geocodeLocation(locationQuery) {
+  const cacheKey = `geo:${locationQuery.toLowerCase()}`;
+  if (locationCache.has(cacheKey)) {
+    return locationCache.get(cacheKey);
+  }
+
+  // Prefer Google geocoding when key is present.
+  if (GOOGLE_MAPS_API_KEY && locationQuery) {
+    const url = new URL(GOOGLE_GEOCODE_URL);
+    url.searchParams.set("address", locationQuery);
+    url.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+    const res = await fetch(url);
+    if (res.ok) {
+      const payload = await res.json();
+      if (payload.status === "OK" && Array.isArray(payload.results) && payload.results.length) {
+        const loc = payload.results[0].geometry?.location;
+        if (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
+          const value = {
+            lat: Number(loc.lat),
+            lon: Number(loc.lng),
+            formattedAddress: String(payload.results[0].formatted_address || locationQuery)
+          };
+          locationCache.set(cacheKey, value);
+          return value;
+        }
+      }
+    }
+  }
+
+  if (!locationQuery) return null;
+  const url = new URL(NOMINATIM_URL);
+  url.searchParams.set("q", locationQuery);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+  const res = await fetch(url, {
+    headers: { "User-Agent": "smart-shop-prototype/1.0 (educational project)" }
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!Array.isArray(data) || !data.length) return null;
+  const value = {
+    lat: Number(data[0].lat),
+    lon: Number(data[0].lon),
+    formattedAddress: String(data[0].display_name || locationQuery)
+  };
+  locationCache.set(cacheKey, value);
+  return value;
+}
+
+async function fetchNearbyGoogleStores(location, radiusMeters = 12000) {
+  if (!GOOGLE_MAPS_API_KEY || !location) return [];
+  const res = await fetch(GOOGLE_PLACES_NEARBY_NEW_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+      "X-Goog-FieldMask":
+        "places.displayName,places.location,places.formattedAddress,places.primaryType,places.types"
+    },
+    body: JSON.stringify({
+      includedTypes: ["supermarket", "grocery_store", "department_store"],
+      maxResultCount: 20,
+      rankPreference: "DISTANCE",
+      locationRestriction: {
+        circle: {
+          center: { latitude: location.lat, longitude: location.lon },
+          radius: radiusMeters
+        }
+      }
+    })
+  });
+  if (!res.ok) return [];
+  const payload = await res.json();
+  const results = Array.isArray(payload.places) ? payload.places : [];
+
+  // Deduplicate chain duplicates by name (keep nearest entry only).
+  const deduped = results
+    .map((place) => {
+      const lat = Number(place.location?.latitude);
+      const lon = Number(place.location?.longitude);
+      return {
+        name: String(place.displayName?.text || "Unnamed Store"),
+        lat,
+        lon,
+        address: String(place.formattedAddress || ""),
+        primaryType: String(place.primaryType || ""),
+        distanceMi: haversineMiles(location.lat, location.lon, lat, lon)
+      };
+    })
+    .filter((s) => s.name !== "Unnamed Store" && Number.isFinite(s.distanceMi));
+
+  const byName = new Map();
+  for (const store of deduped.sort((a, b) => a.distanceMi - b.distanceMi)) {
+    const key = store.name.toLowerCase().trim();
+    if (!byName.has(key)) {
+      byName.set(key, store);
+    }
+  }
+  return Array.from(byName.values()).slice(0, 12);
+}
+
+async function checkGoogleApiCapability() {
+  if (!GOOGLE_MAPS_API_KEY) {
+    return {
+      hasApiKey: false,
+      geocodingEnabled: false,
+      placesEnabled: false,
+      mode: "fallback"
+    };
+  }
+
+  let geocodingEnabled = false;
+  let placesEnabled = false;
+
+  try {
+    const geoUrl = new URL(GOOGLE_GEOCODE_URL);
+    geoUrl.searchParams.set("address", "Santa Clara, CA");
+    geoUrl.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+    const geoRes = await fetch(geoUrl);
+    if (geoRes.ok) {
+      const geoPayload = await geoRes.json();
+      geocodingEnabled = geoPayload.status !== "REQUEST_DENIED" && geoPayload.status !== "OVER_DAILY_LIMIT";
+    }
+  } catch {
+    geocodingEnabled = false;
+  }
+
+  try {
+    const placesUrl = new URL(GOOGLE_PLACES_TEXT_SEARCH_URL);
+    placesUrl.searchParams.set("query", "grocery stores in Santa Clara");
+    placesUrl.searchParams.set("key", GOOGLE_MAPS_API_KEY);
+    const placesRes = await fetch(placesUrl);
+    if (placesRes.ok) {
+      const placesPayload = await placesRes.json();
+      placesEnabled = placesPayload.status !== "REQUEST_DENIED" && placesPayload.status !== "OVER_DAILY_LIMIT";
+    }
+  } catch {
+    placesEnabled = false;
+  }
+
+  return {
+    hasApiKey: true,
+    geocodingEnabled,
+    placesEnabled,
+    mode: placesEnabled ? "google-places" : geocodingEnabled ? "google-geocode+fallback-stores" : "fallback"
+  };
+}
+
+async function fetchNearbyRealStores(location, radiusMeters = 12000) {
+  if (!location) return [];
+  const googleStores = await fetchNearbyGoogleStores(location, radiusMeters);
+  if (googleStores.length) {
+    return googleStores;
+  }
+
+  const query = `
+[out:json][timeout:20];
+(
+  node["shop"="supermarket"](around:${radiusMeters},${location.lat},${location.lon});
+  node["shop"="department_store"](around:${radiusMeters},${location.lat},${location.lon});
+  node["shop"="convenience"](around:${radiusMeters},${location.lat},${location.lon});
+);
+out body 40;
+`;
+  const res = await fetch(OVERPASS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: query
+  });
+  if (!res.ok) return [];
+  const payload = await res.json();
+  const elements = Array.isArray(payload.elements) ? payload.elements : [];
+  return elements
+    .map((el) => ({
+      name: el.tags?.name || "Unnamed Store",
+      lat: Number(el.lat),
+      lon: Number(el.lon),
+      distanceMi: haversineMiles(location.lat, location.lon, Number(el.lat), Number(el.lon))
+    }))
+    .filter((s) => s.name !== "Unnamed Store" && Number.isFinite(s.distanceMi))
+    .sort((a, b) => a.distanceMi - b.distanceMi)
+    .slice(0, 15);
+}
+
+function createRealStoreCollector() {
+  return {
+    id: "real-osm-nearby-stores",
+    displayName: "OpenStreetMap Nearby Stores",
+    async collect({ items, maxDistance, userLocation }) {
+      const location = await geocodeLocation(userLocation?.locationQuery || "");
+      if (!location) return [];
+      const nearbyStores = await fetchNearbyRealStores(location);
+      return nearbyStores
+        .filter((store) => store.distanceMi <= maxDistance)
+        .map((store) => {
+          const itemBreakdown = items.map((item) => {
+            const base = estimateUnknownPrice(item.name, "Budget Basket");
+            const adj = retailerMultiplier(store.name);
+            return {
+              item: item.name,
+              category: item.category,
+              price: Number((base * adj).toFixed(2)),
+              estimated: true
+            };
+          });
+          const total = itemBreakdown.reduce((sum, entry) => sum + entry.price, 0);
+          return {
+            storeName: store.name,
+            distanceMi: Number(store.distanceMi.toFixed(2)),
+            storeAddress: store.address || "",
+            total,
+            knownCount: 0,
+            totalCount: itemBreakdown.length,
+            itemBreakdown,
+            source: "real-store-estimated-price",
+            sourceId: this.id,
+            fetchedAt: new Date().toISOString()
+          };
+        });
+    }
+  };
+}
 
 const db = new Low(new JSONFile(path.join(__dirname, "db.json")), { users: {} });
 await db.read();
@@ -264,16 +548,61 @@ app.post("/api/compare", (req, res) => {
     return res.status(400).json({ error: "items array is required." });
   }
 
-  const options = STORE_CATALOG.map((store) => calculateStoreOption(store, items))
-    .filter((option) => option.distanceMi <= maxDistance)
-    .sort((a, b) => (a.total === b.total ? a.distanceMi - b.distanceMi : a.total - b.total));
+  const includeMode = String(req.body?.storeMode || "both").toLowerCase();
+  const activeCollectors = [];
+  if (includeMode === "both" || includeMode === "mock") {
+    activeCollectors.push(...collectors);
+  }
+  if (includeMode === "both" || includeMode === "real") {
+    activeCollectors.push(createRealStoreCollector());
+  }
 
-  const categoryCounts = items.reduce((acc, item) => {
-    acc[item.category] = (acc[item.category] || 0) + 1;
-    return acc;
-  }, {});
+  Promise.all(
+    activeCollectors.map((collector) =>
+      collector.collect({
+        items,
+        maxDistance,
+        userLocation: req.body?.userLocation || null
+      })
+    )
+  )
+    .then((collectorResults) => {
+      const options = collectorResults
+        .flat()
+        .sort((a, b) => (a.total === b.total ? a.distanceMi - b.distanceMi : a.total - b.total));
 
-  return res.json({ options, frequentItems: getTopItems(userId), categoryCounts });
+      const categoryCounts = items.reduce((acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + 1;
+        return acc;
+      }, {});
+
+      const hasReal = options.some((option) => option.source === "real-store-estimated-price");
+      return res.json({
+        options,
+        frequentItems: getTopItems(userId),
+        categoryCounts,
+        resolvedLocation: req.body?.userLocation?.locationQuery || "",
+        sourceCounts: options.reduce((acc, option) => {
+          const key = option.source || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {}),
+        collectorSummary: activeCollectors.map((collector) => ({
+          id: collector.id,
+          displayName: collector.displayName
+        })),
+        warnings: hasReal
+          ? []
+          : [
+              GOOGLE_MAPS_API_KEY
+                ? "No live stores returned for the location query; showing mock fallback."
+                : "GOOGLE_MAPS_API_KEY missing; live store results may be limited."
+            ]
+      });
+    })
+    .catch((error) => {
+      return res.status(500).json({ error: `collector_failure: ${error.message}` });
+    });
 });
 
 app.post("/api/find-dupes", async (req, res) => {
@@ -319,6 +648,29 @@ app.get("/api/users/:userId/frequent-items", (req, res) => {
   return res.json({ items: getTopItems(userId) });
 });
 
-app.listen(PORT, () => {
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
+});
+
+app.get("/api/capabilities", async (_req, res) => {
+  const google = await checkGoogleApiCapability();
+  return res.json({
+    google,
+    liveStoreProvider: google.placesEnabled ? "google_places" : "openstreetmap_or_mock"
+  });
+});
+
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+const server = app.listen(PORT, () => {
   console.log(`Smart Shop prototype server running at http://localhost:${PORT}`);
 });
+
+server.on("close", () => {
+  console.log("Server closed.");
+});
+
+// Keep process active in environments that aggressively unref idle listeners.
+setInterval(() => {}, 1 << 30);

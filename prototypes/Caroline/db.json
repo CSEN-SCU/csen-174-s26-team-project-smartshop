@@ -1,3 +1,14 @@
 {
-  "users": {}
+  "users": {
+    "maya-22": {
+      "purchaseCounts": {}
+    },
+    "default-user": {
+      "purchaseCounts": {
+        "milk": 2,
+        "eggs": 1,
+        "bread": 1
+      }
+    }
+  }
 }

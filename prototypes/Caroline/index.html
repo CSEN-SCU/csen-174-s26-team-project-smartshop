@@ -19,22 +19,14 @@
         <p class="kicker">Smart Shop Prototype</p>
         <h1>Compare full-cart totals by store.</h1>
         <p class="lead">
-          Enter everything you want to buy, then compare each store by total
-          cart price and distance from your location.
+          Add your list and compare total cost + distance.
         </p>
 
         <label for="shopping-list">Shopping list (one item per line)</label>
-        <textarea id="shopping-list" spellcheck="false">milk
-eggs
-bread
-chicken breast
-rice
-dish soap
-hoodie
-mascara</textarea>
+        <textarea id="shopping-list" spellcheck="false"></textarea>
 
-        <label for="user-id">User ID</label>
-        <input id="user-id" type="text" value="maya-22" />
+        <label for="location-query">Your location (city or ZIP)</label>
+        <input id="location-query" type="text" value="Santa Clara, CA" />
 
         <label for="max-distance">Max distance willing to travel</label>
         <div class="range-row">
@@ -44,7 +36,7 @@ mascara</textarea>
 
         <button id="compare-btn" type="button">Compare Stores</button>
         <button id="save-purchase-btn" type="button" class="secondary">
-          Save This List as Purchased
+          Save List
         </button>
         <p id="status-line" class="status-line"></p>
 
@@ -55,7 +47,7 @@ mascara</textarea>
           <textarea id="dupe-description" spellcheck="false" rows="4">black oversized hoodie with soft fleece lining</textarea>
           <label for="dupe-image">Optional reference image</label>
           <input id="dupe-image" type="file" accept="image/*" />
-          <button id="find-dupes-btn" type="button">Find Dupes</button>
+          <button id="find-dupes-btn" type="button">Search</button>
           <div id="dupe-results" class="dupe-results"></div>
         </div>
       </section>

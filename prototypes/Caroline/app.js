@@ -1,6 +1,6 @@
 const shoppingListEl = document.querySelector("#shopping-list");
 const maxDistanceEl = document.querySelector("#max-distance");
-const userIdEl = document.querySelector("#user-id");
+const locationQueryEl = document.querySelector("#location-query");
 const distanceValueEl = document.querySelector("#distance-value");
 const compareBtnEl = document.querySelector("#compare-btn");
 const savePurchaseBtnEl = document.querySelector("#save-purchase-btn");
@@ -27,7 +27,7 @@ function parseShoppingList(text) {
 }
 
 function getUserId() {
-  return userIdEl.value.trim() || "guest";
+  return "default-user";
 }
 
 function renderEmpty(message) {
@@ -93,7 +93,8 @@ function renderResults(options) {
     name.textContent = option.storeName;
     distance.textContent = `${option.distanceMi.toFixed(1)} mi`;
     total.textContent = fmtCurrency.format(option.total);
-    coverage.textContent = `Priced ${option.knownCount}/${option.totalCount} items from known data`;
+    const addressSuffix = option.storeAddress ? ` · ${option.storeAddress}` : "";
+    coverage.textContent = `Source: ${option.source || "unknown"} · Priced ${option.knownCount}/${option.totalCount} items from known data${addressSuffix}`;
 
     if (option.total === bestTotal) {
       card.classList.add("best");
@@ -114,6 +115,7 @@ async function runComparison() {
   const items = parseShoppingList(shoppingListEl.value);
   const maxDistance = Number(maxDistanceEl.value);
   const userId = getUserId();
+  const locationQuery = locationQueryEl.value.trim();
 
   if (!items.length) {
     renderEmpty("Add at least one item to compare store totals.");
@@ -136,7 +138,13 @@ async function runComparison() {
     const compareRes = await fetch("/api/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, items: normalizedItems, maxDistance }),
+      body: JSON.stringify({
+        userId,
+        items: normalizedItems,
+        maxDistance,
+        storeMode: "real",
+        userLocation: { locationQuery }
+      }),
     });
     const comparePayload = await compareRes.json();
     if (!compareRes.ok) {
@@ -147,10 +155,16 @@ async function runComparison() {
     renderResults(comparePayload.options || []);
     renderFrequentItems(comparePayload.frequentItems || []);
     renderCategoryCounts(comparePayload.categoryCounts || {});
+    const sourceCounts = comparePayload.sourceCounts || {};
+    const realCount = sourceCounts["real-store-estimated-price"] || 0;
+    const warningText = Array.isArray(comparePayload.warnings) && comparePayload.warnings.length
+      ? ` Warning: ${comparePayload.warnings[0]}`
+      : "";
+    const estimationNote = " Prices are still estimated until retailer price feeds are connected.";
     setStatus(
       normalizePayload.source === "openai"
-        ? "Compared with OpenAI-normalized item names."
-        : "Compared with local normalization (set OPENAI_API_KEY for AI mode).",
+        ? `Compared with OpenAI normalization. Results: ${realCount} real store entries.${warningText}${estimationNote}`
+        : `Compared with local normalization. Results: ${realCount} real store entries.${warningText}${estimationNote}`,
     );
   } catch (error) {
     renderEmpty("Could not compare stores. Check server/API configuration.");
@@ -253,6 +267,7 @@ async function runDupeSearch() {
   }
 }
 
+
 maxDistanceEl.addEventListener("input", () => {
   updateDistanceLabel();
   runComparison();
@@ -263,4 +278,3 @@ savePurchaseBtnEl.addEventListener("click", saveAsPurchased);
 findDupesBtnEl.addEventListener("click", runDupeSearch);
 
 updateDistanceLabel();
-runComparison();
