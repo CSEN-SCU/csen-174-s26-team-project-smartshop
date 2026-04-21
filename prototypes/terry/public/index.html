@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SmartShop — Plan once, shop smart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+
+    <header class="top-bar">
+      <span class="logo">SmartShop</span>
+      <span class="tagline">For students who count minutes and dollars</span>
+    </header>
+
+    <main class="shell">
+      <nav class="steps" aria-label="Progress">
+        <ol class="step-track" id="step-track">
+          <li data-step-indicator="intro" class="active">Intro</li>
+          <li data-step-indicator="list">List</li>
+          <li data-step-indicator="clean">Clean up</li>
+          <li data-step-indicator="compare">Compare</li>
+          <li data-step-indicator="result">Best pick</li>
+        </ol>
+      </nav>
+
+      <!-- 1. Landing -->
+      <section class="panel" data-step="intro" id="panel-intro">
+        <p class="eyebrow">Maya’s flow · grocery planning</p>
+        <h1>Find the run that saves money <em>and</em> time</h1>
+        <p class="lede">
+          Paste your list once. We normalize messy notes, compare nearby stores
+          using price <strong>and</strong> distance, then tell you where to go
+          and why—no tab-hopping, no chat thread.
+        </p>
+        <ul class="bullets">
+          <li>Step-by-step: list → cleaned list → ranked stores</li>
+          <li>One clear recommendation with a plain-English reason</li>
+          <li>Reset in one tap for your next demo</li>
+        </ul>
+        <button type="button" class="btn primary" id="btn-start">
+          Start planning
+        </button>
+      </section>
+
+      <!-- 2. List entry -->
+      <section class="panel hidden" data-step="list" id="panel-list" hidden>
+        <h2>Your grocery list</h2>
+        <p class="hint">
+          Type or paste anything—bullets, commas, a messy note from your phone.
+        </p>
+        <label class="sr-only" for="raw-list">Grocery list</label>
+        <textarea
+          id="raw-list"
+          rows="8"
+          placeholder="Example:&#10;milk&#10;eggs&#10;bananas, bread&#10;pasta / rice"
+          spellcheck="false"
+        ></textarea>
+        <div class="actions">
+          <button type="button" class="btn ghost" id="btn-back-intro">
+            Back
+          </button>
+          <button type="button" class="btn primary" id="btn-normalize">
+            Clean up my list
+          </button>
+        </div>
+      </section>
+
+      <!-- 3. Normalizing -->
+      <section
+        class="panel hidden"
+        data-step="clean"
+        id="panel-clean"
+        hidden
+      >
+        <h2>Cleaned list</h2>
+        <p class="hint" id="clean-mode"></p>
+        <ul class="item-list" id="normalized-items"></ul>
+        <p class="error" id="normalize-error" hidden></p>
+        <div class="actions">
+          <button type="button" class="btn ghost" id="btn-back-list">
+            Edit raw list
+          </button>
+          <button type="button" class="btn primary" id="btn-compare">
+            Compare stores
+          </button>
+        </div>
+      </section>
+
+      <!-- 4. Comparing -->
+      <section
+        class="panel hidden"
+        data-step="compare"
+        id="panel-compare"
+        hidden
+      >
+        <div class="loading-block">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="loading-text">Comparing prices and distance…</p>
+        </div>
+      </section>
+
+      <!-- 5. Result -->
+      <section
+        class="panel hidden"
+        data-step="result"
+        id="panel-result"
+        hidden
+      >
+        <p class="eyebrow success">Best overall option</p>
+        <h2 id="result-store-name"></h2>
+        <dl class="stats">
+          <div>
+            <dt>Cart total</dt>
+            <dd id="result-total"></dd>
+          </div>
+          <div>
+            <dt>Distance</dt>
+            <dd id="result-distance"></dd>
+          </div>
+          <div>
+            <dt>Combined score</dt>
+            <dd id="result-score"></dd>
+          </div>
+        </dl>
+
+        <div class="card sub">
+          <h3>Why this store?</h3>
+          <div class="why" id="result-why"></div>
+          <p class="fineprint" id="result-formula"></p>
+        </div>
+
+        <details class="card sub">
+          <summary>Line items at this store</summary>
+          <ul class="line-items" id="result-lines"></ul>
+        </details>
+
+        <details class="card sub">
+          <summary>Other stores (for your notes)</summary>
+          <ul class="alt-stores" id="result-alts"></ul>
+        </details>
+
+        <button type="button" class="btn primary" id="btn-restart">
+          Start over for next trip
+        </button>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Local prototype · sample stores &amp; prices</span>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
