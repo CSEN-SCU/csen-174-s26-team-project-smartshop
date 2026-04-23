@@ -108,6 +108,7 @@ const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 const GOOGLE_PLACES_NEARBY_NEW_URL = "https://places.googleapis.com/v1/places:searchNearby";
+const GOOGLE_PLACES_TEXT_NEW_URL = "https://places.googleapis.com/v1/places:searchText";
 const locationCache = new Map();
 
 /**
@@ -265,6 +266,55 @@ async function fetchNearbyGoogleStores(location, radiusMeters = 12000) {
   return Array.from(byName.values()).slice(0, 12);
 }
 
+async function fetchChainGoogleStores(location, locationQuery, radiusMeters = 12000) {
+  if (!GOOGLE_MAPS_API_KEY || !location) return [];
+  const chains = ["Target", "Walmart", "Costco", "Safeway", "Trader Joe's", "Whole Foods"];
+  const queryAnchor = locationQuery?.trim()
+    ? locationQuery.trim()
+    : location.formattedAddress || `${location.lat},${location.lon}`;
+  const requests = chains.map((chain) =>
+    fetch(GOOGLE_PLACES_TEXT_NEW_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+        "X-Goog-FieldMask":
+          "places.displayName,places.location,places.formattedAddress,places.primaryType"
+      },
+      body: JSON.stringify({
+        textQuery: `${chain} near ${queryAnchor}`,
+        maxResultCount: 4,
+        locationBias: {
+          circle: {
+            center: { latitude: location.lat, longitude: location.lon },
+            radius: radiusMeters
+          }
+        }
+      })
+    }).then(async (res) => {
+      if (!res.ok) return [];
+      const payload = await res.json();
+      return Array.isArray(payload.places) ? payload.places : [];
+    })
+  );
+
+  const chainResults = (await Promise.all(requests)).flat();
+  return chainResults
+    .map((place) => {
+      const lat = Number(place.location?.latitude);
+      const lon = Number(place.location?.longitude);
+      return {
+        name: String(place.displayName?.text || "Unnamed Store"),
+        lat,
+        lon,
+        address: String(place.formattedAddress || ""),
+        primaryType: String(place.primaryType || ""),
+        distanceMi: haversineMiles(location.lat, location.lon, lat, lon)
+      };
+    })
+    .filter((s) => s.name !== "Unnamed Store" && Number.isFinite(s.distanceMi) && s.distanceMi <= radiusMeters / 1609.34);
+}
+
 async function checkGoogleApiCapability() {
   if (!GOOGLE_MAPS_API_KEY) {
     return {
@@ -315,8 +365,15 @@ async function checkGoogleApiCapability() {
 async function fetchNearbyRealStores(location, radiusMeters = 12000) {
   if (!location) return [];
   const googleStores = await fetchNearbyGoogleStores(location, radiusMeters);
-  if (googleStores.length) {
-    return googleStores;
+  const chainStores = await fetchChainGoogleStores(location, location.formattedAddress, radiusMeters);
+  const mergedGoogle = [...googleStores, ...chainStores];
+  if (mergedGoogle.length) {
+    const byName = new Map();
+    for (const store of mergedGoogle.sort((a, b) => a.distanceMi - b.distanceMi)) {
+      const key = store.name.toLowerCase().trim();
+      if (!byName.has(key)) byName.set(key, store);
+    }
+    return Array.from(byName.values()).slice(0, 15);
   }
 
   const query = `
@@ -353,9 +410,13 @@ function createRealStoreCollector() {
     id: "real-osm-nearby-stores",
     displayName: "OpenStreetMap Nearby Stores",
     async collect({ items, maxDistance, userLocation }) {
-      const location = await geocodeLocation(userLocation?.locationQuery || "");
+      const rawLocationQuery = userLocation?.locationQuery || "";
+      const location = await geocodeLocation(rawLocationQuery);
       if (!location) return [];
-      const nearbyStores = await fetchNearbyRealStores(location);
+      // Match lookup radius to user's chosen max distance.
+      const radiusMeters = Math.min(Math.max(Math.ceil(maxDistance * 1609.34), 1609), 50000);
+      location.formattedAddress = rawLocationQuery || location.formattedAddress;
+      const nearbyStores = await fetchNearbyRealStores(location, radiusMeters);
       return nearbyStores
         .filter((store) => store.distanceMi <= maxDistance)
         .map((store) => {
