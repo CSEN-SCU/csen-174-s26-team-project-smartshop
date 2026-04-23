@@ -233,10 +233,12 @@ function renderDupes(dupes, source) {
     `;
     dupeResultsEl.appendChild(card);
   });
-  const sourceLine = document.createElement("p");
-  sourceLine.className = "status-line";
-  sourceLine.textContent = source === "openai" ? "Dupes generated with OpenAI." : "Dupes generated with fallback mode.";
-  dupeResultsEl.appendChild(sourceLine);
+  if (source !== "openai") {
+    const sourceLine = document.createElement("p");
+    sourceLine.className = "status-line";
+    sourceLine.textContent = "Dupes generated with fallback mode.";
+    dupeResultsEl.appendChild(sourceLine);
+  }
 }
 
 async function runDupeSearch() {
@@ -246,7 +248,7 @@ async function runDupeSearch() {
     return;
   }
 
-  setStatus("Searching for similar dupes...");
+  setStatus("searching...");
   try {
     const imageFile = dupeImageEl.files?.[0];
     const imageDataUrl = await fileToDataUrl(imageFile);
@@ -260,7 +262,7 @@ async function runDupeSearch() {
       throw new Error(payload.error || "Could not find dupes.");
     }
     renderDupes(payload.dupes || [], payload.source);
-    setStatus("Dupe search complete.");
+    setStatus("Search complete");
   } catch (error) {
     setStatus(error.message);
     dupeResultsEl.innerHTML = `<div class="empty-state">Could not run dupe search.</div>`;
