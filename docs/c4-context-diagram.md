@@ -10,7 +10,7 @@ flowchart LR
       app["Web App + Backend API\n(HTML/CSS/JS + Node.js/Express)"]
     end
 
-    openai["External System: OpenAI API\nList normalization and dupe suggestions"]
+    openai["External System: OpenAI API\nList normalization and alternative suggestions"]
     maps["External System: Google Maps APIs\nGeocoding + nearby store search"]
     osm["External System: OpenStreetMap Services\nNominatim + Overpass fallback"]
     db["External System: Local Data Store (LowDB/JSON)\nSaved shopping lists and purchase history"]
