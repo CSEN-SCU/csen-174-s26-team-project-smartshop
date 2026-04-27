@@ -64,14 +64,18 @@ export async function POST(req: NextRequest) {
     // Get conversation history
     const history = getRecentMessages(6);
 
-    // Build the chat - Gemini requires history to start with a 'user' turn
+    // Build the chat - Gemini requires history to start with 'user' and alternate roles
     let chatHistory = history.slice(0, -1).map(m => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
     }));
-    // Drop any leading 'model' messages so history always starts with 'user'
+    // Drop leading 'model' messages
     while (chatHistory.length > 0 && chatHistory[0].role !== "user") {
       chatHistory.shift();
+    }
+    // Drop trailing 'user' messages (orphaned from previously failed requests)
+    while (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role !== "model") {
+      chatHistory.pop();
     }
     const chat = model.startChat({ history: chatHistory });
 
