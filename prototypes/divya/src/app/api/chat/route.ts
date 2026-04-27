@@ -30,52 +30,7 @@ export async function POST(req: NextRequest) {
     saveMessage("user", message);
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.5-flash-lite",
       systemInstruction: {
         role: "system",
         parts: [{ text: SYSTEM_PROMPT }],
-      },
-    });
-
-    const extractModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-    const extractResult = await extractModel.generateContent(
-      `Extract grocery item names from this message as a JSON array of strings. Only include actual grocery or food items. Return ONLY the JSON array, no other text. Message: "${message}" Example output: ["eggs", "milk", "chicken breast"]`
-    );
-
-    let items: string[] = [];
-    try {
-      const extractedText = extractResult.response.text().trim();
-      const cleaned = extractedText.replace(/```json\n?|\n?```/g, "").trim();
-      items = JSON.parse(cleaned);
-    } catch {
-      items = [];
-    }
-
-    let priceContext = "";
-    if (items.length > 0) {
-      const priceData = getPricesForItems(items);
-      priceContext = `\n\nHere is the current price data from nearby stores:\n${JSON.stringify(priceData, null, 2)}`;
-    }
-
-    const history = getRecentMessages(6);
-
-    const chat = model.startChat({
-      history: history.slice(0, -1).map(m => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
-    });
-
-    const userMessageWithContext = message + priceContext;
-    const result = await chat.sendMessage(userMessageWithContext);
-    const reply = result.response.text();
-
-    saveMessage("assistant", reply);
-
-    return NextResponse.json({ reply });
-  } catch (err: unknown) {
-    console.error("Chat API error:", err);
-    const message = err instanceof Error ? err.message : "Something went wrong";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
