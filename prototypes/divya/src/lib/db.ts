@@ -23,6 +23,7 @@ function initSchema(db: Database.Database) {
       address TEXT NOT NULL,
       distance_miles REAL NOT NULL
     );
+
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       store_id INTEGER NOT NULL,
@@ -31,6 +32,7 @@ function initSchema(db: Database.Database) {
       unit TEXT NOT NULL,
       FOREIGN KEY (store_id) REFERENCES stores(id)
     );
+
     CREATE TABLE IF NOT EXISTS chat_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role TEXT NOT NULL,
@@ -108,6 +110,7 @@ function seedData(db: Database.Database) {
 export function getPricesForItems(items: string[]): object {
   const db = getDb();
   const result: Record<string, { store: string; price: number; unit: string; distance: number }[]> = {};
+
   for (const item of items) {
     const rows = db.prepare(`
       SELECT p.item_name, p.price, p.unit, s.name as store_name, s.distance_miles
@@ -115,10 +118,17 @@ export function getPricesForItems(items: string[]): object {
       WHERE LOWER(p.item_name) LIKE LOWER(?)
       ORDER BY p.price ASC
     `).all(`%${item}%`) as { item_name: string; price: number; unit: string; store_name: string; distance_miles: number }[];
+
     if (rows.length > 0) {
-      result[item] = rows.map(r => ({ store: r.store_name, price: r.price, unit: r.unit, distance: r.distance_miles }));
+      result[item] = rows.map(r => ({
+        store: r.store_name,
+        price: r.price,
+        unit: r.unit,
+        distance: r.distance_miles,
+      }));
     }
   }
+
   return result;
 }
 
@@ -129,10 +139,27 @@ export function saveMessage(role: string, content: string) {
 
 export function getRecentMessages(limit = 10): { role: string; content: string }[] {
   const db = getDb();
-  return db.prepare("SELECT role, content FROM chat_messages ORDER BY created_at DESC LIMIT ?").all(limit).reverse() as { role: string; content: string }[];
+  return db.prepare(
+    "SELECT role, content FROM chat_messages ORDER BY created_at DESC LIMIT ?"
+  ).all(limit).reverse() as { role: string; content: string }[];
 }
 
 export function clearMessages() {
   const db = getDb();
   db.prepare("DELETE FROM chat_messages").run();
+}
+
+// Returns the total number of stores in the database
+export function getStoreCount(): number {
+  const db = getDb();
+  const row = db.prepare("SELECT COUNT(*) as count FROM stores").get() as { count: number };
+  return row.count;
+}
+
+// Returns all products for a given store id
+export function getProductsByStore(storeId: number): object[] {
+  const db = getDb();
+  return db.prepare(
+    "SELECT item_name, price, unit FROM products WHERE store_id = ? ORDER BY item_name ASC"
+  ).all(storeId) as object[];
 }
