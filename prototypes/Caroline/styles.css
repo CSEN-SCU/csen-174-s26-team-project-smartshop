@@ -183,7 +183,7 @@ button.secondary:active {
   color: var(--muted);
 }
 
-.dupe-panel {
+.alternative-panel {
   margin-top: 1rem;
   border: 2px dashed var(--line);
   border-radius: 14px;
@@ -191,30 +191,30 @@ button.secondary:active {
   background: rgba(255, 255, 255, 0.5);
 }
 
-.dupe-panel h3 {
+.alternative-panel h3 {
   margin: 0;
 }
 
-.dupe-panel p {
+.alternative-panel p {
   margin: 0.25rem 0 0.3rem;
   color: var(--muted);
   font-size: 0.92rem;
 }
 
-.dupe-results {
+.alternative-results {
   margin-top: 0.6rem;
   display: grid;
   gap: 0.45rem;
 }
 
-.dupe-card {
+.alternative-card {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 0.55rem;
   background: #f8f6f3;
 }
 
-.dupe-card p {
+.alternative-card p {
   margin: 0.15rem 0 0;
   font-size: 0.9rem;
 }

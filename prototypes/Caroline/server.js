@@ -478,7 +478,7 @@ function detectCategory(item) {
 }
 
 async function normalizeWithOpenAI(rawText) {
-  const response = await openai.responses.create({
+  const request = {
     model: "gpt-4.1-mini",
     input: [
       {
@@ -488,8 +488,43 @@ async function normalizeWithOpenAI(rawText) {
       },
       { role: "user", content: `Normalize this list:\n${rawText}` }
     ]
-  });
-  const parsed = JSON.parse(response.output_text || "{\"items\":[]}");
+  };
+
+  let lastError = null;
+  let response = null;
+
+  // Give OpenAI an extra attempt for slower/transient responses before falling back.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      response = await openai.responses.create(request, { timeout: 45000 });
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+
+  if (!response) {
+    throw lastError || new Error("OpenAI normalization request failed.");
+  }
+
+  const rawOutput = String(response.output_text || "");
+  let parsed;
+  try {
+    parsed = JSON.parse(rawOutput || "{\"items\":[]}");
+  } catch {
+    // Recover JSON object if model wraps valid JSON with extra text.
+    const start = rawOutput.indexOf("{");
+    const end = rawOutput.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      parsed = JSON.parse(rawOutput.slice(start, end + 1));
+    } else {
+      throw new Error("OpenAI normalization response was not valid JSON.");
+    }
+  }
+
   if (!Array.isArray(parsed.items)) {
     return [];
   }
@@ -543,32 +578,32 @@ function getTopItems(userId, limit = 8) {
     .map(([item, count]) => ({ item, count }));
 }
 
-function fallbackDupes(description) {
+function fallbackAlternatives(description) {
   const key = description.toLowerCase();
   return [
-    { name: `${key} - budget dupe`, estimatedPrice: 14.99, reason: "Lower-cost similar style/material." },
-    { name: `${key} - midrange dupe`, estimatedPrice: 24.99, reason: "Balanced price and quality." },
-    { name: `${key} - value pack dupe`, estimatedPrice: 11.49, reason: "Best savings per unit." }
+    { name: `${key} - budget alternative`, estimatedPrice: 14.99, reason: "Lower-cost similar style/material." },
+    { name: `${key} - midrange alternative`, estimatedPrice: 24.99, reason: "Balanced price and quality." },
+    { name: `${key} - value pack alternative`, estimatedPrice: 11.49, reason: "Best savings per unit." }
   ];
 }
 
-async function findDupesWithOpenAI(description, imageDataUrl) {
+async function findAlternativesWithOpenAI(description, imageDataUrl) {
   const input = [
     {
       role: "system",
       content:
-        "You are a shopping dupe assistant. Return strict JSON with {\"dupes\":[{\"name\":string,\"estimatedPrice\":number,\"reason\":string}]} and no extra text."
+        "You are a shopping alternative assistant. Return strict JSON with {\"alternatives\":[{\"name\":string,\"estimatedPrice\":number,\"reason\":string}]} and no extra text."
     }
   ];
-  const userContent = [{ type: "input_text", text: `Find 3 affordable dupes for: ${description}` }];
+  const userContent = [{ type: "input_text", text: `Find 3 affordable alternatives for: ${description}` }];
   if (imageDataUrl) {
     userContent.push({ type: "input_image", image_url: imageDataUrl });
   }
   input.push({ role: "user", content: userContent });
 
   const response = await openai.responses.create({ model: "gpt-4.1-mini", input });
-  const parsed = JSON.parse(response.output_text || "{\"dupes\":[]}");
-  return Array.isArray(parsed.dupes) ? parsed.dupes : [];
+  const parsed = JSON.parse(response.output_text || "{\"alternatives\":[]}");
+  return Array.isArray(parsed.alternatives) ? parsed.alternatives : [];
 }
 
 app.post("/api/normalize-items", async (req, res) => {
@@ -582,9 +617,14 @@ app.post("/api/normalize-items", async (req, res) => {
       ? await normalizeWithOpenAI(rawText)
       : normalizeFallback(rawText).map((name) => ({ name, category: detectCategory(name) }));
     return res.json({ items, source: openai ? "openai" : "fallback" });
-  } catch {
+  } catch (error) {
     const items = normalizeFallback(rawText).map((name) => ({ name, category: detectCategory(name) }));
-    return res.json({ items, source: "fallback", warning: "OpenAI normalization failed." });
+    const message = String(error?.message || "unknown error").replace(/\s+/g, " ").trim();
+    return res.json({
+      items,
+      source: "fallback",
+      warning: `OpenAI normalization failed: ${message}`
+    });
   }
 });
 
@@ -666,7 +706,7 @@ app.post("/api/compare", (req, res) => {
     });
 });
 
-app.post("/api/find-dupes", async (req, res) => {
+app.post("/api/find-alternatives", async (req, res) => {
   const description = String(req.body?.description || "").trim();
   const imageDataUrl = req.body?.imageDataUrl ? String(req.body.imageDataUrl) : "";
 
@@ -675,10 +715,12 @@ app.post("/api/find-dupes", async (req, res) => {
   }
 
   try {
-    const dupes = openai ? await findDupesWithOpenAI(description, imageDataUrl) : fallbackDupes(description);
-    return res.json({ dupes, source: openai ? "openai" : "fallback" });
+    const alternatives = openai
+      ? await findAlternativesWithOpenAI(description, imageDataUrl)
+      : fallbackAlternatives(description);
+    return res.json({ alternatives, source: openai ? "openai" : "fallback" });
   } catch {
-    return res.json({ dupes: fallbackDupes(description), source: "fallback" });
+    return res.json({ alternatives: fallbackAlternatives(description), source: "fallback" });
   }
 });
 

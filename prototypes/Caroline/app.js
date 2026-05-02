@@ -8,10 +8,10 @@ const statusLineEl = document.querySelector("#status-line");
 const resultsEl = document.querySelector("#results");
 const frequentItemsEl = document.querySelector("#frequent-items");
 const categoryCountsEl = document.querySelector("#category-counts");
-const dupeDescriptionEl = document.querySelector("#dupe-description");
-const dupeImageEl = document.querySelector("#dupe-image");
-const findDupesBtnEl = document.querySelector("#find-dupes-btn");
-const dupeResultsEl = document.querySelector("#dupe-results");
+const alternativeDescriptionEl = document.querySelector("#alternative-description");
+const alternativeImageEl = document.querySelector("#alternative-image");
+const findAlternativesBtnEl = document.querySelector("#find-alternatives-btn");
+const alternativeResultsEl = document.querySelector("#alternative-results");
 const templateEl = document.querySelector("#store-card-template");
 
 const fmtCurrency = new Intl.NumberFormat("en-US", {
@@ -216,56 +216,56 @@ function fileToDataUrl(file) {
   });
 }
 
-function renderDupes(dupes, source) {
-  dupeResultsEl.innerHTML = "";
-  if (!dupes.length) {
-    dupeResultsEl.innerHTML = `<div class="empty-state">No dupes found.</div>`;
+function renderAlternatives(alternatives, source) {
+  alternativeResultsEl.innerHTML = "";
+  if (!alternatives.length) {
+    alternativeResultsEl.innerHTML = `<div class="empty-state">No alternatives found.</div>`;
     return;
   }
 
-  dupes.forEach((dupe) => {
+  alternatives.forEach((alternative) => {
     const card = document.createElement("article");
-    card.className = "dupe-card";
+    card.className = "alternative-card";
     card.innerHTML = `
-      <strong>${dupe.name}</strong>
-      <p>Estimated price: ${fmtCurrency.format(Number(dupe.estimatedPrice || 0))}</p>
-      <p>${dupe.reason || ""}</p>
+      <strong>${alternative.name}</strong>
+      <p>Estimated price: ${fmtCurrency.format(Number(alternative.estimatedPrice || 0))}</p>
+      <p>${alternative.reason || ""}</p>
     `;
-    dupeResultsEl.appendChild(card);
+    alternativeResultsEl.appendChild(card);
   });
   if (source !== "openai") {
     const sourceLine = document.createElement("p");
     sourceLine.className = "status-line";
-    sourceLine.textContent = "Dupes generated with fallback mode.";
-    dupeResultsEl.appendChild(sourceLine);
+    sourceLine.textContent = "Alternatives generated with fallback mode.";
+    alternativeResultsEl.appendChild(sourceLine);
   }
 }
 
-async function runDupeSearch() {
-  const description = dupeDescriptionEl.value.trim();
+async function runAlternativeSearch() {
+  const description = alternativeDescriptionEl.value.trim();
   if (!description) {
-    setStatus("Add a description to find dupes.");
+    setStatus("Add a description to find alternatives.");
     return;
   }
 
   setStatus("searching...");
   try {
-    const imageFile = dupeImageEl.files?.[0];
+    const imageFile = alternativeImageEl.files?.[0];
     const imageDataUrl = await fileToDataUrl(imageFile);
-    const res = await fetch("/api/find-dupes", {
+    const res = await fetch("/api/find-alternatives", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description, imageDataUrl })
     });
     const payload = await res.json();
     if (!res.ok) {
-      throw new Error(payload.error || "Could not find dupes.");
+      throw new Error(payload.error || "Could not find alternatives.");
     }
-    renderDupes(payload.dupes || [], payload.source);
+    renderAlternatives(payload.alternatives || [], payload.source);
     setStatus("Search complete");
   } catch (error) {
     setStatus(error.message);
-    dupeResultsEl.innerHTML = `<div class="empty-state">Could not run dupe search.</div>`;
+    alternativeResultsEl.innerHTML = `<div class="empty-state">Could not run alternative search.</div>`;
   }
 }
 
@@ -277,6 +277,6 @@ maxDistanceEl.addEventListener("input", () => {
 
 compareBtnEl.addEventListener("click", runComparison);
 savePurchaseBtnEl.addEventListener("click", saveAsPurchased);
-findDupesBtnEl.addEventListener("click", runDupeSearch);
+findAlternativesBtnEl.addEventListener("click", runAlternativeSearch);
 
 updateDistanceLabel();
