@@ -6,8 +6,9 @@
     "default-user": {
       "purchaseCounts": {
         "milk": 2,
-        "eggs": 1,
-        "bread": 1
+        "eggs": 2,
+        "bread": 1,
+        "cheese": 1
       }
     }
   }
