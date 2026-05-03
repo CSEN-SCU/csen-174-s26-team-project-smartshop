@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { postFindAlternatives } from "../src/alternatives.mjs";
 
-// As a shopper, when I describe an item I want (like a hoodie), Smart Shop suggests a few comparable options with estimated prices so I can compare without visiting every store.
+// As a shopper, when I describe something I want to buy—like a cotton hoodie—I want Smart Shop to suggest a few similar products with estimated prices and short reasons so I can compare options before I shop.
 test("find-alternatives returns structured alternatives from OpenAI-shaped response", async () => {
-  // Arrange
+  // Arrange — set up inputs: a fake AI client returning a fixed JSON payload, and my plain-language request.
   const mockOpenAI = {
     responses: {
       create: async () => ({
@@ -21,11 +21,11 @@ test("find-alternatives returns structured alternatives from OpenAI-shaped respo
   };
   const description = "cotton hoodie";
 
-  // Action
+  // Action — call the handler that builds the alternatives response our app would return.
   const result = await postFindAlternatives(mockOpenAI, description, "");
-  const data = result.body;
 
-  // Assert
+  // Assert — status, source, and each alternative row must match what we expose to users.
+  const data = result.body;
   assert.equal(result.status, 200);
   assert.ok(Array.isArray(data.alternatives), "alternatives must be an array");
   assert.ok(data.alternatives.length > 0, "alternatives must not be empty");
