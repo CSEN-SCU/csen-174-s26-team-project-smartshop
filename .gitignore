@@ -7,3 +7,6 @@
 # Keep example templates committed
 !.env.example
 !**/.env.example
+
+# TDD skill test harness (install deps locally)
+tddSkillTests/node_modules/

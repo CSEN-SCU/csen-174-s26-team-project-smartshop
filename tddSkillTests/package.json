@@ -1,0 +1,11 @@
+{
+  "name": "smartshop-tdd-skill-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ./smartshop-core.test.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0"
+  }
+}
