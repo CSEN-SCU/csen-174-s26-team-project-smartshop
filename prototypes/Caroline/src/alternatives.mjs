@@ -12,23 +12,9 @@ export function fallbackAlternatives(description) {
   ];
 }
 
-async function findAlternativesWithOpenAI(openai, description, imageDataUrl) {
-  const input = [
-    {
-      role: "system",
-      content:
-        "You are a shopping alternative assistant. Return strict JSON with {\"alternatives\":[{\"name\":string,\"estimatedPrice\":number,\"reason\":string}]} and no extra text."
-    }
-  ];
-  const userContent = [{ type: "input_text", text: `Find 3 affordable alternatives for: ${description}` }];
-  if (imageDataUrl) {
-    userContent.push({ type: "input_image", image_url: imageDataUrl });
-  }
-  input.push({ role: "user", content: userContent });
-
-  const response = await openai.responses.create({ model: "gpt-4.1-mini", input });
-  const parsed = JSON.parse(response.output_text || "{\"alternatives\":[]}");
-  return Array.isArray(parsed.alternatives) ? parsed.alternatives : [];
+/** RED: not calling the model yet — implement GREEN with one `responses.create` per request. */
+async function findAlternativesWithOpenAI(_openai, _description, _imageDataUrl) {
+  return [];
 }
 
 export async function postFindAlternatives(openai, description, imageDataUrl = "") {
