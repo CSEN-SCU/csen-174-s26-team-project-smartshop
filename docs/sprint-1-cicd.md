@@ -2,7 +2,7 @@
 
 ## Part 1: Working CI Workflow
 
-**Link to merged PR with passing CI:** _(paste GitHub PR link here once merged)_
+**Link to merged PR with passing CI:** https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/pull/23
 
 ### Secrets
 
