@@ -17,6 +17,25 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dependencies (tddSkillTests)
+        working-directory: tddSkillTests
+        run: npm install
+
+      - name: Run test suite (tddSkillTests)
+        working-directory: tddSkillTests
+        run: npm test
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Install dependencies (Caroline prototype)
+        working-directory: prototypes/Caroline
+        run: npm install
+
+      - name: Run test suite (Caroline prototype)
+        working-directory: prototypes/Caroline
+        run: npm test
+
       - name: Install dependencies
         working-directory: prototypes/divya
         run: npm install
