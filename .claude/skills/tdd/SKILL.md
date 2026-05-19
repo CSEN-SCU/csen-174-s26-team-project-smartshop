@@ -7,7 +7,7 @@ description: "Use this skill to generate, review, or improve tests for the Smart
 
 ## Overview
 
-SmartShop uses Jest with ts-jest for testing. The stack is Next.js 14, TypeScript, SQLite (better-sqlite3), and the Gemini API. Tests live next to the files they test.
+SmartShop uses Jest with ts-jest for testing. The stack is Next.js 14, TypeScript, SQLite (better-sqlite3), and the **OpenAI** API (Divya prototype: `/api/chat` and `/api/similar-alternatives`). Tests live next to the files they test.
 
 ## Test File Locations
 
@@ -57,47 +57,49 @@ Bad: expect(dbPrepare).toHaveBeenCalledWith("SELECT...")
 
 ## Writing Integration Tests (API Route)
 
-Mock the Gemini SDK and set GEMINI_API_KEY before importing the route.
+Mock the OpenAI SDK and set `OPENAI_API_KEY` before importing the route.
 
 ```typescript
-jest.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-    getGenerativeModel: jest.fn().mockReturnValue({
-      generateContent: jest.fn().mockResolvedValue({
-        response: { text: () => '["eggs"]' },
-      }),
-      startChat: jest.fn().mockReturnValue({
-        sendMessage: jest.fn().mockResolvedValue({
-          response: { text: () => "Trader Joe's has eggs for $2.99." },
+jest.mock("openai", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    responses: {
+      create: jest.fn().mockResolvedValue({ output_text: '["eggs", "milk"]' }),
+    },
+    chat: {
+      completions: {
+        create: jest.fn().mockResolvedValue({
+          choices: [{ message: { content: "Trader Joe's has eggs for $2.99." } }],
         }),
-      }),
-    }),
+      },
+    },
   })),
 }));
 
-process.env.GEMINI_API_KEY = "test-key";
+process.env.OPENAI_API_KEY = "test-key";
 import { POST } from "./route";
 ```
 
 ## Writing AI Behavior Tests
 
-Use jest.resetModules() and jest.doMock() to control what the AI returns per test. Test outcomes like "reply mentions a store" not internals like "Gemini was called once."
+Use jest.resetModules() and jest.doMock() to control what the AI returns per test. Test outcomes like "reply mentions a store" not internals like "OpenAI was called once."
 
 ```typescript
-function mockGeminiReply(reply: string) {
+function mockOpenAIReplies(extractJson: string, chatReply: string) {
   jest.resetModules();
-  jest.doMock("@google/generative-ai", () => ({
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockReturnValue({
-        generateContent: jest.fn().mockResolvedValue({
-          response: { text: () => '["eggs"]' },
-        }),
-        startChat: jest.fn().mockReturnValue({
-          sendMessage: jest.fn().mockResolvedValue({
-            response: { text: () => reply },
+  jest.doMock("openai", () => ({
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      responses: {
+        create: jest.fn().mockResolvedValue({ output_text: extractJson }),
+      },
+      chat: {
+        completions: {
+          create: jest.fn().mockResolvedValue({
+            choices: [{ message: { content: chatReply } }],
           }),
-        }),
-      }),
+        },
+      },
     })),
   }));
 }
@@ -115,6 +117,6 @@ When asked to generate tests:
 ## Common Gotchas
 
 - better-sqlite3 is a native module. Always use testEnvironment: "node" in jest config.
-- route.ts throws at module load time if GEMINI_API_KEY is missing. Always set process.env.GEMINI_API_KEY = "test-key" before importing the route.
-- Gemini chat history must start with a user message and end with a model message.
+- `route.ts` throws at module load time if `OPENAI_API_KEY` is missing. Always set `process.env.OPENAI_API_KEY = "test-key"` before importing the chat route.
+- Chat route uses `responses.create` for item extraction and `chat.completions.create` for the reply—mock both on the default export client.
 - Use jest.resetModules() between AI behavior tests to avoid mock bleed-through.

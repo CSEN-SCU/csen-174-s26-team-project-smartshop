@@ -6,7 +6,7 @@
 
 ### Secrets
 
-The team uses one secret in CI: `GEMINI_API_KEY`, which the `/api/chat` route needs to call the Gemini model. It is stored in the repo under **Settings → Secrets and variables → Actions** as `GEMINI_API_KEY` and referenced in the workflow as `${{ secrets.GEMINI_API_KEY }}`. The secret is injected only into the `npm test` step so it is never written to a file, never appears in the workflow YAML itself, and never shows up in the commit history. The same key is also added as an environment variable in the deployment platform (Vercel) so the production app can call Gemini at runtime. No secrets appear in code or in `.env` files that are committed to the repo.
+The Divya prototype tests in CI use **`OPENAI_API_KEY`** (OpenAI for `/api/chat` and `/api/similar-alternatives`). It is stored under **Settings → Secrets and variables → Actions** as `OPENAI_API_KEY` and referenced in the workflow as `${{ secrets.OPENAI_API_KEY }}`. The secret is injected only into the `npm test` step for `prototypes/divya` so it is never written to a file, never appears in the workflow YAML itself, and never shows up in the commit history. The same variable should be set in the deployment platform (Vercel) so production can call OpenAI at runtime. No secrets appear in code or in `.env` files that are committed to the repo.
 
 ### How the workflow runs
 
@@ -22,4 +22,4 @@ The workflow lives at `.github/workflows/ci.yml`. It triggers on every `pull_req
 
 ### Deployment platform
 
-The team deployed to **Vercel** because it has native support for Next.js (auto-detects the framework, handles `next build`, and routes API calls correctly without extra config). The free Hobby tier is sufficient for a class project. The main gotcha on the first deploy was that Vercel defaulted to Node.js 24 and `better-sqlite3` (a native module) failed to compile against the newer V8 headers — the fix was to change the project Node.js version to 20.x in **Project Settings → Build and Deployment**. The `GEMINI_API_KEY` secret was added in Vercel's **Project → Settings → Environment Variables** and is never in the codebase.
+The team deployed to **Vercel** because it has native support for Next.js (auto-detects the framework, handles `next build`, and routes API calls correctly without extra config). The free Hobby tier is sufficient for a class project. The main gotcha on the first deploy was that Vercel defaulted to Node.js 24 and `better-sqlite3` (a native module) failed to compile against the newer V8 headers — the fix was to change the project Node.js version to 20.x in **Project Settings → Build and Deployment**. The **`OPENAI_API_KEY`** variable was added in Vercel's **Project → Settings → Environment Variables** and is never in the codebase.

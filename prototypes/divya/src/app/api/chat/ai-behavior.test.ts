@@ -6,31 +6,34 @@
 
 import { NextRequest } from "next/server";
 
-process.env.GEMINI_API_KEY = "test-key";
+process.env.OPENAI_API_KEY = "test-key";
 
 // Each test controls exactly what the AI "says" via mocking
-function mockGeminiReply(reply: string) {
+function mockOpenAIReplies(extractJson: string, chatReply: string) {
   jest.resetModules();
-  jest.doMock("@google/generative-ai", () => ({
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockReturnValue({
-        generateContent: jest.fn().mockResolvedValue({
-          response: { text: () => '["eggs"]' },
+  jest.doMock("openai", () => ({
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      responses: {
+        create: jest.fn().mockResolvedValue({
+          output_text: extractJson,
         }),
-        startChat: jest.fn().mockReturnValue({
-          sendMessage: jest.fn().mockResolvedValue({
-            response: { text: () => reply },
+      },
+      chat: {
+        completions: {
+          create: jest.fn().mockResolvedValue({
+            choices: [{ message: { content: chatReply } }],
           }),
-        }),
-      }),
+        },
+      },
     })),
   }));
 }
 
 describe("AI behavior contract", () => {
   test.skip("reply for a grocery query mentions a store name", async () => {
-    // Sprint 2: AI behavior contract tests — deferred until Gemini integration is stable in W6
-    mockGeminiReply(
+    mockOpenAIReplies(
+      '["eggs"]',
       "Trader Joe's has the best price for eggs at $2.99 (0.8 mi away)."
     );
     const { POST } = await import("./route");
@@ -48,8 +51,7 @@ describe("AI behavior contract", () => {
   });
 
   test.skip("reply does not contain 'undefined' or '[object Object]'", async () => {
-    // Sprint 2: AI behavior contract tests — deferred until Gemini integration is stable in W6
-    mockGeminiReply("Trader Joe's has eggs for $2.99.");
+    mockOpenAIReplies('["eggs"]', "Trader Joe's has eggs for $2.99.");
     const { POST } = await import("./route");
 
     const req = new NextRequest("http://localhost/api/chat", {
@@ -64,8 +66,8 @@ describe("AI behavior contract", () => {
   });
 
   test.skip("reply for unknown item acknowledges it is not in the database", async () => {
-    // Sprint 2: AI behavior contract tests — deferred until Gemini integration is stable in W6
-    mockGeminiReply(
+    mockOpenAIReplies(
+      '["dragonfruitXYZ"]',
       "I don't have price data for dragonfruitXYZ in my database. Try checking a nearby store directly."
     );
     const { POST } = await import("./route");
@@ -77,7 +79,6 @@ describe("AI behavior contract", () => {
 
     const res = await POST(req);
     const data = await res.json();
-    // The AI should acknowledge the missing item gracefully
     expect(data.reply.length).toBeGreaterThan(10);
   });
 });

@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3030",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3030",
     "test": "jest"
   },
   "jest": {
@@ -14,12 +14,15 @@
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
     },
-    "testPathIgnorePatterns": ["/node_modules/", "/.next/"]
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.next/"
+    ]
   },
   "dependencies": {
-    "@google/generative-ai": "^0.11.0",
     "better-sqlite3": "^9.4.3",
     "next": "14.2.3",
+    "openai": "^6.34.0",
     "react": "^18",
     "react-dom": "^18"
   },
