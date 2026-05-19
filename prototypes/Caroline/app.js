@@ -226,11 +226,16 @@ function renderAlternatives(alternatives, source) {
   alternatives.forEach((alternative) => {
     const card = document.createElement("article");
     card.className = "alternative-card";
-    card.innerHTML = `
-      <strong>${alternative.name}</strong>
-      <p>Estimated price: ${fmtCurrency.format(Number(alternative.estimatedPrice || 0))}</p>
-      <p>${alternative.reason || ""}</p>
-    `;
+    // Security fix: use textContent to prevent XSS from AI-generated content
+    const nameEl = document.createElement('strong');
+    nameEl.textContent = alternative.name;
+    const priceEl = document.createElement('p');
+    priceEl.textContent = `Estimated price: ${fmtCurrency.format(Number(alternative.estimatedPrice || 0))}`;
+    const reasonEl = document.createElement('p');
+    reasonEl.textContent = alternative.reason || '';
+    card.appendChild(nameEl);
+    card.appendChild(priceEl);
+    card.appendChild(reasonEl);
     alternativeResultsEl.appendChild(card);
   });
   if (source !== "openai") {
