@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -64,6 +65,14 @@ export default function Home() {
             <div className="text-5xl mb-4">🛒</div>
             <h1 className="text-4xl font-bold text-green-700">SmartShop</h1>
             <p className="text-xl text-gray-600 mt-2">Find the best grocery deals near you</p>
+            <p className="text-sm mt-3">
+              <Link
+                href="/similar-alternatives"
+                className="text-green-600 hover:text-green-800 font-medium underline underline-offset-2"
+              >
+                Find similar alternatives to one product →
+              </Link>
+            </p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-left space-y-4">
             <h2 className="font-semibold text-lg text-gray-800">What is SmartShop?</h2>
@@ -105,7 +114,13 @@ export default function Home() {
           <span className="text-2xl">🛒</span>
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap justify-end">
+          <Link
+            href="/similar-alternatives"
+            className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
+          >
+            Similar alt.
+          </Link>
           <button onClick={resetChat} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">New chat</button>
           <button onClick={() => { resetChat(); setStarted(false); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Home</button>
         </div>
