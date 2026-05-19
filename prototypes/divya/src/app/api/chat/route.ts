@@ -73,7 +73,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No message provided" }, { status: 400 });
     }
 
-    saveMessage("user", message);
+    // Responsible AI: crisis/sensitive-content gate — runs before DB write or AI call
+  const CRISIS_PATTERNS = [
+    /hurt(?:ing)?\s+(?:my)?self/i,
+    /kill(?:ing)?\s+(?:my)?self/i,
+    /suicid/i,
+    /self[\s-]?harm/i,
+    /want to die/i,
+    /end (?:my )?life/i,
+    /i(?:'m| am) (?:only )?\d{1,2}(?:\s*years? old|\s*yo)?/i,
+    /i(?:'m| am) a minor/i,
+  ];
+  const CRISIS_RESPONSE =
+    "I'm a grocery price assistant and not equipped to help with what you've shared. " +
+    "If you're going through something difficult, please reach out to someone who can support you.\n\n" +
+    "**988 Suicide & Crisis Lifeline** — call or text **988** (US)\n" +
+    "**Crisis Text Line** — text HOME to **741741**\n\n" +
+    "If you have grocery questions, I'm here to help with those.";
+  if (CRISIS_PATTERNS.some((p) => p.test(message))) {
+    // Do NOT save to DB or call OpenAI — return safe response immediately
+    return NextResponse.json({ reply: CRISIS_RESPONSE });
+  }
+
+  saveMessage("user", message);
 
     const items = await extractGroceryItems(message);
 
