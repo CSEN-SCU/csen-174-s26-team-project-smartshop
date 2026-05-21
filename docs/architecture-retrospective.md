@@ -34,6 +34,18 @@ C4Context
     Rel(shop, ext_maps, "Location and distance")
     Rel(shop, ext_stores, "Price ingest")
     Rel(ext_host, shop, "Deploys")
+    UpdateElementStyle(shopper, $bgColor="#08427B", $fontColor="#FFFFFF", $borderColor="#052E56")
+    UpdateElementStyle(shop, $bgColor="#15803D", $fontColor="#FFFFFF", $borderColor="#166534")
+    UpdateElementStyle(ext_ai, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+    UpdateElementStyle(ext_maps, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+    UpdateElementStyle(ext_stores, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+    UpdateElementStyle(ext_host, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+    UpdateRelStyle(shopper, shop, $lineColor="#08427B", $textColor="#08427B")
+    UpdateRelStyle(shop, ext_ai, $lineColor="#15803D", $textColor="#15803D")
+    UpdateRelStyle(shop, ext_maps, $lineColor="#686868", $textColor="#686868")
+    UpdateRelStyle(shop, ext_stores, $lineColor="#686868", $textColor="#686868")
+    UpdateRelStyle(ext_host, shop, $lineColor="#686868", $textColor="#686868")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
 The full C4 container diagram, external services table, security notes, and CI coverage gap are documented in the PDF below.
