@@ -22,31 +22,38 @@ shows both prices and distance to the grocery store and helps users decide wheth
 
 ```mermaid
 C4Context
-    title SmartShop System Context
-    Person(shopper, "Shopper", "Budget grocery shopper")
-    System(shop, "SmartShop", "Hosted on Vercel with chat and similar alternatives")
-    System_Ext(ext_ai, "OpenAI API", "Chat and similar alternatives")
-    System_Ext(ext_maps, "Google Maps API", "Geocoding and travel distance")
-    System_Ext(ext_stores, "Store sources", "Catalogs for price scraper")
-    System_Ext(ext_host, "Vercel", "Hosting")
-    Rel(shopper, shop, "Uses")
-    Rel(shop, ext_ai, "AI requests")
-    Rel(shop, ext_maps, "Location and distance")
-    Rel(shop, ext_stores, "Price ingest")
-    Rel(ext_host, shop, "Deploys")
-    UpdateElementStyle(shopper, $bgColor="#08427B", $fontColor="#FFFFFF", $borderColor="#052E56")
-    UpdateElementStyle(shop, $bgColor="#15803D", $fontColor="#FFFFFF", $borderColor="#166534")
-    UpdateElementStyle(ext_ai, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
-    UpdateElementStyle(ext_maps, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
-    UpdateElementStyle(ext_stores, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
-    UpdateElementStyle(ext_host, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
-    UpdateRelStyle(shopper, shop, $lineColor="#08427B", $textColor="#08427B")
-    UpdateRelStyle(shop, ext_ai, $lineColor="#15803D", $textColor="#15803D")
-    UpdateRelStyle(shop, ext_maps, $lineColor="#686868", $textColor="#686868")
-    UpdateRelStyle(shop, ext_stores, $lineColor="#686868", $textColor="#686868")
-    UpdateRelStyle(ext_host, shop, $lineColor="#686868", $textColor="#686868")
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+  title SmartShop System Context deployed prototype
+
+  Person(shopper, "Shopper", "Budget grocery shopper")
+
+  System(smartshop, "SmartShop", "Next.js on Vercel with chat prices and similar alternatives")
+
+  System_Ext(openai, "OpenAI API", "Chat and similar alternatives")
+  System_Ext(maps, "Google Maps API", "Geocoding and travel distance")
+  System_Ext(retailers, "Store sources", "Catalogs for price scraper")
+  System_Ext(vercel, "Vercel", "Hosting")
+
+  Rel(shopper, smartshop, "Uses", "HTTPS")
+  Rel(smartshop, openai, "AI requests", "HTTPS")
+  Rel(smartshop, maps, "Location and distance", "HTTPS")
+  Rel(smartshop, retailers, "Price ingest", "HTTPS")
+  Rel(vercel, smartshop, "Deploys", "HTTPS")
+
+  UpdateElementStyle(shopper, $bgColor="#08427B", $fontColor="#FFFFFF", $borderColor="#052E56")
+  UpdateElementStyle(smartshop, $bgColor="#1168BD", $fontColor="#FFFFFF", $borderColor="#0B4884")
+  UpdateElementStyle(openai, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+  UpdateElementStyle(maps, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+  UpdateElementStyle(retailers, $bgColor="#686868", $fontColor="#FFFFFF", $borderColor="#444444")
+  UpdateElementStyle(vercel, $bgColor="#546E7A", $fontColor="#FFFFFF", $borderColor="#37474F")
+  UpdateRelStyle(shopper, smartshop, $lineColor="#08427B", $textColor="#08427B")
+  UpdateRelStyle(smartshop, openai, $lineColor="#686868", $textColor="#686868")
+  UpdateRelStyle(smartshop, maps, $lineColor="#686868", $textColor="#686868")
+  UpdateRelStyle(smartshop, retailers, $lineColor="#686868", $textColor="#686868")
+  UpdateRelStyle(vercel, smartshop, $lineColor="#546E7A", $textColor="#546E7A")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
+
+Colors align with the [container diagram PDF](./architecture-retrospective.pdf) legend: **Person** (navy), **verified container** (blue), **external service** (gray), **infrastructure** (slate).
 
 The full C4 container diagram, external services table, security notes, and CI coverage gap are documented in the PDF below.
 
