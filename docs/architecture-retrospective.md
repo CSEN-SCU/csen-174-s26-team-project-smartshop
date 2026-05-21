@@ -22,22 +22,18 @@ shows both prices and distance to the grocery store and helps users decide wheth
 
 ```mermaid
 C4Context
-  title SmartShop System Context deployed prototype
-
-  Person(shopper, Shopper, Budget grocery shopper)
-
-  System(smartshop, SmartShop, Next.js on Vercel with chat prices and similar alternatives)
-
-  System_Ext(openai, OpenAI API, Chat and similar alternatives)
-  System_Ext(maps, Google Maps API, Geocoding and travel distance)
-  System_Ext(retailers, Store sources, Catalogs for price scraper)
-  System_Ext(vercel, Vercel, Hosting)
-
-  Rel(shopper, smartshop, Uses, HTTPS)
-  Rel(smartshop, openai, AI requests, HTTPS)
-  Rel(smartshop, maps, Location and distance, HTTPS)
-  Rel(smartshop, retailers, Price ingest, HTTPS)
-  Rel(vercel, smartshop, Deploys, HTTPS)
+    title SmartShop System Context
+    Person(shopper, "Shopper", "Budget grocery shopper")
+    System(shop, "SmartShop", "Hosted on Vercel with chat and similar alternatives")
+    System_Ext(ext_ai, "OpenAI API", "Chat and similar alternatives")
+    System_Ext(ext_maps, "Google Maps API", "Geocoding and travel distance")
+    System_Ext(ext_stores, "Store sources", "Catalogs for price scraper")
+    System_Ext(ext_host, "Vercel", "Hosting")
+    Rel(shopper, shop, "Uses")
+    Rel(shop, ext_ai, "AI requests")
+    Rel(shop, ext_maps, "Location and distance")
+    Rel(shop, ext_stores, "Price ingest")
+    Rel(ext_host, shop, "Deploys")
 ```
 
 The full C4 container diagram, external services table, security notes, and CI coverage gap are documented in the PDF below.
