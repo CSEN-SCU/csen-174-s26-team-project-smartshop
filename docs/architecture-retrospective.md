@@ -24,20 +24,20 @@ shows both prices and distance to the grocery store and helps users decide wheth
 C4Context
   title SmartShop System Context deployed prototype
 
-  Person(shopper, Shopper, Budget-conscious grocery shopper)
+  Person(shopper, Shopper, Budget grocery shopper)
 
-  System(smartshop, SmartShop, Next.js on Vercel. Chat with store prices and similar product suggestions. Crisis gate before OpenAI. Price scraper planned for live store data.)
+  System(smartshop, SmartShop, Next.js on Vercel with chat prices and similar alternatives)
 
-  System_Ext(openai, OpenAI API, gpt-4.1-mini chat and similar alternatives OPENAI_API_KEY)
-  System_Ext(maps, Google Maps API, Geocoding nearby stores and travel distance GOOGLE_MAPS_API_KEY)
-  System_Ext(retailers, Grocery store sources, Store websites and catalogs. Scraper will read prices planned.)
-  System_Ext(vercel, Vercel, Hosts SmartShop from main)
+  System_Ext(openai, OpenAI API, Chat and similar alternatives)
+  System_Ext(maps, Google Maps API, Geocoding and travel distance)
+  System_Ext(retailers, Store sources, Catalogs for price scraper)
+  System_Ext(vercel, Vercel, Hosting)
 
-  Rel(shopper, smartshop, Uses chat and similar alternatives, HTTPS)
-  Rel(smartshop, openai, Item extraction chat reply similar products, HTTPS)
-  Rel(smartshop, maps, User location store distance and nearby search, HTTPS planned)
-  Rel(smartshop, retailers, Price scraper ingests store data, HTTPS planned)
-  Rel(vercel, smartshop, Build deploy and run, GitHub CI)
+  Rel(shopper, smartshop, Uses, HTTPS)
+  Rel(smartshop, openai, AI requests, HTTPS)
+  Rel(smartshop, maps, Location and distance, HTTPS)
+  Rel(smartshop, retailers, Price ingest, HTTPS)
+  Rel(vercel, smartshop, Deploys, HTTPS)
 ```
 
 The full C4 container diagram, external services table, security notes, and CI coverage gap are documented in the PDF below.
