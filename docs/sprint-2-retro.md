@@ -9,10 +9,10 @@ Make roles between backend and database more clear. Communicate clearly about wh
 
 ### Which improvements will the team commit to in Sprint 3?
 
-#####Database: Scraping
-#####Backend: Login 
-#####AI: integrate more safety guards and integrate any dietary restrictions and version specifications (size, flavor, etc)
-#####Frontend: Formalize UI throughout app
+##### Database: Scraping
+##### Backend: Login 
+##### AI: integrate more safety guards and integrate any dietary restrictions and version specifications (size, flavor, etc)
+##### Frontend: Formalize UI throughout app
 
 We will assign tasks at the beginning of the lab session to each member and make sure any confusion is cleared up.
 
