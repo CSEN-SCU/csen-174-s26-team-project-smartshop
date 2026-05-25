@@ -20,7 +20,7 @@ shows both prices and distance to the grocery store and helps users decide wheth
 
 ## W4 Diagrams
 
-[Context Diagram]()
+[Context Diagram](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/c4-context-diagram.md)
 
 [Container Diagram](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/c4-container-diagram.md)
 
