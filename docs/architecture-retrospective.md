@@ -18,13 +18,11 @@ Honey, the browser extension, that looks for online coupons. And unlike manually
 #### OUR PRODUCT 
 shows both prices and distance to the grocery store and helps users decide whether a lower price is actually worth the extra trip. Smart Shop automatically finds the lowest local price for the exact item you want across multiple stores so you don’t overpay for the same thing. Our product is POWERED BY AI that will read the text that the user inputs into the app and searches the database to search for the most affordable options. A scraper gathers information on products and pricing which is then stored in the database. It reduces the manual work of searching store by store and helps users compare equivalent products more accurately.
 
-## W4 Context Diagram
+## W4 Diagrams
 
+[Context Diagram]()
 
-
-## W4 Container Diagram
-
-
+[Container Diagram](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/c4-container-diagram.md)
 
 ## Current C4 System Context Diagram
 
