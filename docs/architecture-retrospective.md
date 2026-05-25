@@ -12,13 +12,21 @@ want to save money/are on a budget.
 #### THE 
 Smart Shop app
 #### THAT
-Compares prices of groceries and ingredients across different grocery stores in the area and shows the user the most affordable option
+Compares prices of groceries across different stores in the area and shows the user the most affordable option
 #### UNLIKE 
 Honey, the browser extension, that looks for online coupons. And unlike manually checking each store’s app/website (or just shopping at one store and hoping it’s cheapest).
 #### OUR PRODUCT 
-shows both prices and distance to the grocery store and helps users decide whether a lower price is actually worth the extra trip. Smart Shop automatically finds the lowest local price for the exact item you want across multiple stores so you don’t overpay for the same thing. Our product is POWERED BY AI that will read the text / images that the user inputs into the app and searches the web/ database to search for the most affordable options. It reduces the manual work of searching store by store and helps users compare equivalent products more accurately.
+shows both prices and distance to the grocery store and helps users decide whether a lower price is actually worth the extra trip. Smart Shop automatically finds the lowest local price for the exact item you want across multiple stores so you don’t overpay for the same thing. Our product is POWERED BY AI that will read the text that the user inputs into the app and searches the database to search for the most affordable options. A scraper gathers information on products and pricing which is then stored in the database. It reduces the manual work of searching store by store and helps users compare equivalent products more accurately.
 
-## C4 System Context Diagram
+## W4 Context Diagram
+
+
+
+## W4 Container Diagram
+
+
+
+## Current C4 System Context Diagram
 
 ```mermaid
 C4Context
@@ -55,6 +63,6 @@ C4Context
 
 Colors align with the [container diagram PDF](./architecture-retrospective.pdf) legend: **Person** (navy), **verified container** (blue), **external service** (gray), **infrastructure** (slate).
 
-The full C4 container diagram, external services table, security notes, and CI coverage gap are documented in the PDF below.
+## Current C4 Container Diagram
 
 [View architecture-retrospective.pdf](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/architecture-retrospective.pdf)
