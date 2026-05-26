@@ -9,10 +9,10 @@ Make roles between backend and database more clear. Communicate clearly about wh
 
 ### Which improvements will the team commit to in Sprint 3?
 
-##### Database: Scraping
-##### Backend: Login 
-##### AI: integrate more safety guards and integrate any dietary restrictions and version specifications (size, flavor, etc)
-##### Frontend: Formalize UI throughout app
+##### Database: Scraping ([#30](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/issues/30))
+##### Backend: Login ([#31](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/issues/31)) 
+##### AI: integrate more safety guards and integrate any dietary restrictions and version specifications (size, flavor, etc) ([#32](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/issues/32))
+##### Frontend: Formalize UI throughout app ([#33](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/issues/33))
 
 We will assign tasks at the beginning of the lab session to each member and make sure any confusion is cleared up.
 
