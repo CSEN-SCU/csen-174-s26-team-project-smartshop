@@ -21,6 +21,7 @@ User group: Grocery shoppers on a budget who want an easier way to compare price
 Non-user group: Grocery stores and retailers whose pricing data is collected and compared by the app, since the platform may influence where customers choose to shop without the stores directly using the product and we are getting the pricing information from scrapers. 
 
 Potential Harms: 
+
 Harm 1: Grocery shoppers could receive outdated or incorrect prices from stores, causing them to waste time or money traveling to a store expecting a lower price that is no longer available.
 Principle: IEEE Code 1 & 5 “to hold paramount the safety, health, and welfare of the public… and to be honest and realistic in stating claims based on available data.”
 Mitigation: The team will regularly update scraped pricing data, include timestamps showing when prices were last updated, and display a disclaimer that prices may change in-store. Before demo night, we will test the scraper across multiple stores to improve accuracy.
