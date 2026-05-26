@@ -24,6 +24,8 @@ shows both prices and distance to the grocery store and helps users decide wheth
 
 [Container Diagram](https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/c4-container-diagram.md)
 
+We had originanlly planned to have a multi page app where the user can enter a list of items they want. Then, an api call would be made to OpenAI which would normalize the list and output the stores to find the lowest prices. This would also make a call to Google Maps API for store name and location. We planned to have a database with items and prices.
+
 ## Current C4 System Context Diagram
 
 ```mermaid
