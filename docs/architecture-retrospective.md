@@ -123,7 +123,7 @@ Three architectural calls changed materially between the Week 4 design and the W
 
 ## If We Had Another Sprint
 
-With one more sprint, the team would build a single shared API layer — one Express or Next.js route set that all four prototypes call through — so that every feature (chat, alternatives, scraping, login) could be exercised from a single deployed URL instead of four disconnected local servers.
+Sprint 3 will deliver exactly this: a single shared API layer unifying all four prototypes into one deployed site, so every feature — chat, price comparison, scraping, and login — is accessible from a single URL. Given a further sprint beyond that, the team would build out a paid membership tier, gating premium features such as price-drop alerts and saved shopping lists behind a subscription model.
 
 
 
