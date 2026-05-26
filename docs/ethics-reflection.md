@@ -26,11 +26,11 @@ Harm 1: Grocery shoppers could receive outdated or incorrect prices from stores,
 Principle: IEEE Code 1 & 5 “to hold paramount the safety, health, and welfare of the public… and to be honest and realistic in stating claims based on available data.”
 Mitigation: The team will regularly update scraped pricing data, include timestamps showing when prices were last updated, and display a disclaimer that prices may change in-store. Before demo night, we will test the scraper across multiple stores to improve accuracy.
 ____________________
-Harm: Grocery stores could be harmed if incorrect pricing information makes them appear more expensive than competitors, potentially damaging their reputation or reducing customer traffic.
+Harm 2: Grocery stores could be harmed if incorrect pricing information makes them appear more expensive than competitors, potentially damaging their reputation or reducing customer traffic.
 Principle: IEEE Code 9 “to avoid injuring others, their property, reputation, or employment by false or malicious actions.”
 Mitigation: The team will verify pricing information before displaying it and allow corrections to be made quickly if errors are discovered. We will also avoid making misleading claims about stores and provide users with direct links or references to original store pricing when possible.
 ____________________
-Harm: Users’ location data or shopping habits could be exposed or misused, affecting their privacy and making users less comfortable using the app.
+Harm 3: Users’ location data or shopping habits could be exposed or misused, affecting their privacy and making users less comfortable using the app.
 Principle: IEEE Code 1 “to protect the privacy of others.”
 Mitigation: The app will collect only the minimum location data (zip code) needed to compare nearby stores and will not store unnecessary personal information. Before demo night, the team will ensure that user data is not shared with third parties and that privacy protections are clearly explained to users.
 ____________________
