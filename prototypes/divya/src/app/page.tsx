@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { AuthPanel } from "@/components/AuthPanel";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -33,6 +34,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg }),
       });
@@ -49,6 +51,7 @@ export default function Home() {
   async function resetChat() {
     await fetch("/api/chat", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reset: true }),
     });
@@ -86,6 +89,10 @@ export default function Home() {
               ))}
             </div>
           </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h2 className="font-semibold text-lg text-gray-800 mb-4 text-center">Your account</h2>
+            <AuthPanel />
+          </div>
           <button
             onClick={() => setStarted(true)}
             className="bg-green-600 hover:bg-green-700 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow transition-colors w-full sm:w-auto"
@@ -105,9 +112,12 @@ export default function Home() {
           <span className="text-2xl">🛒</span>
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
-        <div className="flex gap-2">
-          <button onClick={resetChat} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">New chat</button>
-          <button onClick={() => { resetChat(); setStarted(false); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Home</button>
+        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <AuthPanel compact />
+          <div className="flex gap-2">
+            <button onClick={resetChat} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">New chat</button>
+            <button onClick={() => { resetChat(); setStarted(false); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Home</button>
+          </div>
         </div>
       </header>
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
