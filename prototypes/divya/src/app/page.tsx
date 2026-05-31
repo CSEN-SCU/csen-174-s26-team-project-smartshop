@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { DIETARY_OPTIONS } from "@/lib/dietary";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -18,7 +19,15 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [restrictions, setRestrictions] = useState<string[]>([]);
+  const [showDietary, setShowDietary] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  function toggleRestriction(id: string) {
+    setRestrictions(prev =>
+      prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
+    );
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,7 +44,7 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({ message: msg, restrictions }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -129,7 +138,31 @@ export default function Home() {
         {messages.length === 0 && (
           <div className="space-y-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <p className="text-gray-700">👋 Hi! Tell me what groceries you're looking for and I'll find the best prices near you. I compare <strong>5 local stores</strong> and factor in distance.</p>
+              <p className="text-gray-700"><span className="text-base mr-2">🛒</span>👋 Hi! I'm SmartShop. Before we start, <strong>do you have any dietary restrictions?</strong> Select any that apply and I'll make sure I only suggest items that are safe for you.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {DIETARY_OPTIONS.map(opt => {
+                  const active = restrictions.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => toggleRestriction(opt.id)}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                        active
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
+                      }`}
+                    >
+                      {active ? "✓ " : ""}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-gray-600 mt-3 text-sm">
+                {restrictions.length > 0
+                  ? `Got it — I'll keep your restrictions in mind. Now tell me what groceries you're looking for!`
+                  : `No restrictions? No problem — just tell me what groceries you're looking for and I'll compare prices across 5 local stores.`}
+              </p>
             </div>
             <p className="text-sm text-gray-400 text-center">Try one of these:</p>
             <div className="grid grid-cols-1 gap-2">
@@ -163,6 +196,42 @@ export default function Home() {
         <div ref={bottomRef} />
       </div>
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3">
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={() => setShowDietary(s => !s)}
+            className="text-xs font-medium text-gray-600 hover:text-green-700 flex items-center gap-1"
+          >
+            🥗 Dietary restrictions
+            {restrictions.length > 0 && (
+              <span className="bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                {restrictions.length}
+              </span>
+            )}
+            <span className="text-gray-400">{showDietary ? "▲" : "▼"}</span>
+          </button>
+          {showDietary && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {DIETARY_OPTIONS.map(opt => {
+                const active = restrictions.includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => toggleRestriction(opt.id)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      active
+                        ? "bg-green-600 text-white border-green-600"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
+                    }`}
+                  >
+                    {active ? "✓ " : ""}{opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
           <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="e.g. eggs, milk, chicken breast..." className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent" disabled={loading} />
           <button type="submit" disabled={loading || !input.trim()} className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl px-5 py-3 font-semibold text-sm transition-colors">Send</button>

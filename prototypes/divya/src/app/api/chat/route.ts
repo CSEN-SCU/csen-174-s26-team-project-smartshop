@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import { getPricesForItems, saveMessage, getRecentMessages } from "@/lib/db";
+import {
+  buildDietaryInstruction,
+  buildDietaryWarning,
+  findDietaryConflicts,
+} from "@/lib/dietary";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error(
@@ -13,7 +18,20 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MODEL = "gpt-4.1-mini";
 
-const SYSTEM_PROMPT = `You are SmartShop, a friendly grocery price comparison assistant. Your job is to help budget-conscious shoppers find the best deals across nearby stores. When a user mentions grocery items, you will receive structured price data from a local database. Use this data to give a clear, conversational recommendation about where to shop. Be friendly and concise. Always mention both price AND distance because a cheaper store farther away may not be worth it. Highlight the best overall value, not just cheapest price. If an item is not in the database, say so and suggest they try a nearby store. Keep responses short, 3 to 5 sentences max unless listing multiple items. Use simple language, not technical jargon.`;
+const SYSTEM_PROMPT = `You are SmartShop, a grocery price comparison assistant. When a user mentions grocery items, you receive reference price data for generic categories from a local database. Use it as a guide for realistic pricing and which nearby stores to cite.
+
+OUTPUT FORMAT — do NOT write conversational sentences, greetings, paragraphs, intros, or sign-offs. Output ONLY a markdown bullet list of SPECIFIC products. For each grocery item the user asks about, suggest 1 to 3 specific real-world products, each on its own line in exactly this format:
+
+- **<Brand> <Product name>, <size>** — $<price> at <Store> (<distance> mi) · <brief ingredient/detail note>
+
+Rules:
+- Always recommend SPECIFIC branded products with brand, name, and size. Example: "Skippy Chunky Peanut Butter, 16 oz" or "Jif Natural Peanut Butter, 16 oz" — never just "peanut butter".
+- EXCEPTION: fresh produce (fruits and vegetables) may be generic, e.g. "Bananas, per lb".
+- Use the reference price data to anchor realistic prices and stores. If a specific product is not in the reference data, give a realistic estimated price and pick a plausible nearby store from this list: Trader Joe's (0.8 mi), Safeway (1.2 mi), Whole Foods (2.1 mi), Target (1.7 mi), Costco (3.4 mi).
+- Choose good overall value (balance price AND distance).
+- The ingredient/detail note must be short (a few words): key ingredients, type, or attribute (e.g. "creamy, roasted peanuts", "100% durum wheat", "cage-free"). No full sentences.
+- Never output "not found" for common grocery items — always suggest a real specific product.
+- No intros, summaries, or follow-up questions. Just the bullet list.`;
 
 function parseItemArray(raw: string): string[] {
   const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
@@ -61,7 +79,7 @@ async function extractGroceryItems(message: string): Promise<string[]> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, reset } = await req.json();
+    const { message, reset, restrictions, dietaryNotes } = await req.json();
 
     if (reset) {
       const { clearMessages } = await import("@/lib/db");
@@ -72,6 +90,12 @@ export async function POST(req: NextRequest) {
     if (!message?.trim()) {
       return NextResponse.json({ error: "No message provided" }, { status: 400 });
     }
+
+    const restrictionIds: string[] = Array.isArray(restrictions)
+      ? restrictions.map((r) => String(r))
+      : [];
+    const dietaryFreeText =
+      typeof dietaryNotes === "string" ? dietaryNotes : "";
 
     // Responsible AI: crisis/sensitive-content gate — runs before DB write or AI call
   const CRISIS_PATTERNS = [
@@ -108,8 +132,10 @@ export async function POST(req: NextRequest) {
     const history = getRecentMessages(6);
     const prior = history.slice(0, -1);
 
+    const dietaryInstruction = buildDietaryInstruction(restrictionIds, dietaryFreeText);
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + dietaryInstruction },
       ...prior.map((m) => ({
         role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
         content: m.content,
@@ -122,7 +148,21 @@ export async function POST(req: NextRequest) {
       messages,
     });
 
-    const reply = completion.choices[0]?.message?.content?.trim() || "I couldn’t generate a reply. Try again.";
+    let reply = completion.choices[0]?.message?.content?.trim() || "I couldn’t generate a reply. Try again.";
+
+    // Deterministic safety net: scan the products the AI suggested (one per line)
+    // and only append a caution if a SUGGESTED product appears to violate a
+    // restriction. Compliant items (e.g. "gluten-free bread", "almond milk") are
+    // not flagged, so this fires only when the model itself slips up.
+    if (restrictionIds.length > 0) {
+      const suggestedLines = reply.split("\n").filter((l) => l.trim());
+      const conflicts = findDietaryConflicts(suggestedLines, restrictionIds);
+      const warning = buildDietaryWarning(conflicts);
+      if (warning) {
+        reply = reply + warning;
+      }
+    }
+
     saveMessage("assistant", reply);
 
     return NextResponse.json({ reply });
