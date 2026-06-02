@@ -1,15 +1,15 @@
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-import { getPricesForItems, saveMessage, getRecentMessages } from "@/lib/db";
+import { getPricesForItems, saveMessage, getRecentMessages, dataExportedAt } from "@/lib/db";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error(
-    "Missing OPENAI_API_KEY. Create a .env.local file in this directory and add: OPENAI_API_KEY=your_key_here\n" +
-      "Get your key at: https://platform.openai.com/api-keys"
-  );
+function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error(
+      "Missing OPENAI_API_KEY. Add it in your Vercel project settings under Environment Variables."
+    );
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MODEL = "gpt-4.1-mini";
 
@@ -41,6 +41,7 @@ function parseItemArray(raw: string): string[] {
 }
 
 async function extractGroceryItems(message: string): Promise<string[]> {
+  const openai = getOpenAI();
   const res = await openai.responses.create({
     model: MODEL,
     input: [
@@ -61,7 +62,7 @@ async function extractGroceryItems(message: string): Promise<string[]> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, reset } = await req.json();
+    const { message, reset, allergens } = await req.json();
 
     if (reset) {
       const { clearMessages } = await import("@/lib/db");
@@ -102,14 +103,29 @@ export async function POST(req: NextRequest) {
     let priceContext = "";
     if (items.length > 0) {
       const priceData = getPricesForItems(items);
-      priceContext = `\n\nHere is the current price data from nearby stores:\n${JSON.stringify(priceData, null, 2)}`;
+      const dateLabel = dataExportedAt
+        ? new Date(dataExportedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : "unknown date";
+      priceContext = `\n\nHere is the price data from nearby stores (last updated: ${dateLabel}). Always include this disclaimer when showing prices: "⚠️ Prices last updated ${dateLabel} — verify with the store before your trip."\n\n${JSON.stringify(priceData, null, 2)}`;
     }
 
     const history = getRecentMessages(6);
     const prior = history.slice(0, -1);
 
+    const allergenList = Array.isArray(allergens) && allergens.length > 0 ? allergens : [];
+    const allergenNote = allergenList.length > 0
+      ? `\n\nIMPORTANT — ALLERGEN AWARENESS: This user is allergic to: ${allergenList.join(", ")}. You must think carefully about what each grocery item is made from and warn if there is any connection. Use broad ingredient knowledge — for example:
+- gluten is found in wheat, so pasta, bread, flour, crackers, cereal, soy sauce, and beer all contain gluten
+- dairy includes milk, butter, cheese, yogurt, cream, whey, and casein
+- peanuts may be present in peanut butter, mixed nuts, some sauces, and candy
+- eggs are in mayonnaise, pasta (some types), baked goods, and dressings
+- soy is in tofu, edamame, soy sauce, miso, and many processed foods
+- tree nuts include almonds, cashews, walnuts, pecans, etc.
+If an item the user asks about commonly contains or is derived from one of their allergens, warn them with "⚠️ Allergen warning — [item] commonly contains [allergen]." before giving prices. Do not skip this warning even if the item seems obvious.`
+      : "";
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + allergenNote },
       ...prior.map((m) => ({
         role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
         content: m.content,
@@ -117,7 +133,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: message + priceContext },
     ];
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: MODEL,
       messages,
     });

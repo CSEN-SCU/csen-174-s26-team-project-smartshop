@@ -21,6 +21,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [authHint, setAuthHint] = useState("");
+  const [allergenInput, setAllergenInput] = useState("");
+  const [allergens, setAllergens] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function Home() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({ message: msg, allergens }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -123,6 +125,42 @@ export default function Home() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="font-semibold text-lg text-gray-800 mb-4 text-center">Your account</h2>
             <AuthPanel />
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-left space-y-3">
+            <div>
+              <h2 className="font-semibold text-lg text-gray-800">🚨 Allergens <span className="text-sm font-normal text-gray-400">(optional)</span></h2>
+              <p className="text-sm text-gray-500 mt-1">We'll warn you if something you're shopping for commonly contains these.</p>
+            </div>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                const trimmed = allergenInput.trim();
+                if (!trimmed) return;
+                const newOnes = trimmed.split(",").map(a => a.trim()).filter(a => a && !allergens.includes(a.toLowerCase())).map(a => a.toLowerCase());
+                if (newOnes.length) setAllergens(prev => [...prev, ...newOnes]);
+                setAllergenInput("");
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                value={allergenInput}
+                onChange={e => setAllergenInput(e.target.value)}
+                placeholder="e.g. peanuts, gluten, dairy"
+                className="flex-1 border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+              <button type="submit" className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2 text-sm font-semibold transition-colors">Add</button>
+            </form>
+            {allergens.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {allergens.map(a => (
+                  <span key={a} className="flex items-center gap-1 bg-red-50 border border-red-200 text-red-700 text-xs font-medium px-3 py-1 rounded-full">
+                    {a}
+                    <button onClick={() => setAllergens(prev => prev.filter(x => x !== a))} className="ml-1 text-red-400 hover:text-red-600 font-bold">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           {authHint && (
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-center">
