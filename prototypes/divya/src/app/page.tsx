@@ -60,6 +60,11 @@ export default function Home() {
     setError("");
   }
 
+  function returnToHome() {
+    void resetChat();
+    setStarted(false);
+  }
+
   if (!started) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
@@ -100,7 +105,7 @@ export default function Home() {
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="font-semibold text-lg text-gray-800 mb-4 text-center">Your account</h2>
-            <AuthPanel />
+            <AuthPanel variant="card" />
           </div>
           <button
             onClick={() => setStarted(true)}
@@ -116,23 +121,33 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col max-w-2xl mx-auto">
-      <header className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-3 z-10">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🛒</span>
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
-        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-          <AuthPanel compact />
-          <div className="flex gap-2 items-center flex-wrap justify-end">
-            <Link
-              href="/similar-alternatives"
-              className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
-            >
-              Similar alt.
-            </Link>
-            <button onClick={resetChat} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">New chat</button>
-            <button onClick={() => { resetChat(); setStarted(false); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Home</button>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
+          <AuthPanel variant="header" onLogout={returnToHome} />
+          <Link
+            href="/similar-alternatives"
+            className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
+          >
+            Similar alt.
+          </Link>
+          <button
+            type="button"
+            onClick={() => void resetChat()}
+            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            New chat
+          </button>
+          <button
+            type="button"
+            onClick={returnToHome}
+            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            Home
+          </button>
         </div>
       </header>
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">

@@ -5,10 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 type User = { id: number; email: string };
 
 type AuthPanelProps = {
-  compact?: boolean;
+  /** Full login/signup card for the home page. */
+  variant?: "card" | "header";
+  /** Called after a successful logout (e.g. return to home). */
+  onLogout?: () => void;
 };
 
-export function AuthPanel({ compact = false }: AuthPanelProps) {
+export function AuthPanel({ variant = "card", onLogout }: AuthPanelProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -16,6 +19,8 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const isHeader = variant === "header";
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -66,6 +71,7 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
       setUser(null);
       setEmail("");
       setPassword("");
+      onLogout?.();
     } catch {
       setError("Logout failed");
     } finally {
@@ -73,15 +79,35 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
     }
   }
 
-  if (loading) {
+  if (isHeader) {
+    if (loading || !user) return null;
     return (
-      <p className={`text-sm text-gray-500 ${compact ? "" : "text-center"}`}>Checking session…</p>
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className="text-xs text-gray-600 truncate max-w-[140px] sm:max-w-[200px]"
+          title={user.email}
+        >
+          {user.email}
+        </span>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={submitting}
+          className="shrink-0 text-xs text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          Log out
+        </button>
+      </div>
     );
+  }
+
+  if (loading) {
+    return <p className="text-sm text-gray-500 text-center">Checking session…</p>;
   }
 
   if (user) {
     return (
-      <div className={`flex ${compact ? "flex-row items-center gap-2" : "flex-col items-center gap-2"}`}>
+      <div className="flex flex-col items-center gap-2">
         <span className="text-sm text-gray-700">
           Signed in as <strong className="text-green-800">{user.email}</strong>
         </span>
@@ -98,7 +124,7 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
   }
 
   return (
-    <div className={`w-full ${compact ? "max-w-md" : "max-w-sm mx-auto"}`}>
+    <div className="w-full max-w-sm mx-auto">
       <div className="flex gap-2 mb-3 justify-center">
         <button
           type="button"
