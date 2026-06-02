@@ -26,6 +26,8 @@ type Store = {
 const products: Product[] = data.products as Product[];
 const stores: Store[] = data.stores as Store[];
 
+export const dataExportedAt: string = (data as { exported_at?: string }).exported_at ?? "";
+
 // In-memory chat messages (resets per serverless invocation — fine for demo)
 const chatMessages: { role: string; content: string; created_at: string }[] = [];
 

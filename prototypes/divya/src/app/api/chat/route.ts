@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-import { getPricesForItems, saveMessage, getRecentMessages } from "@/lib/db";
+import { getPricesForItems, saveMessage, getRecentMessages, dataExportedAt } from "@/lib/db";
 
 function getOpenAI() {
   if (!process.env.OPENAI_API_KEY) {
@@ -103,7 +103,10 @@ export async function POST(req: NextRequest) {
     let priceContext = "";
     if (items.length > 0) {
       const priceData = getPricesForItems(items);
-      priceContext = `\n\nHere is the current price data from nearby stores:\n${JSON.stringify(priceData, null, 2)}`;
+      const dateLabel = dataExportedAt
+        ? new Date(dataExportedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : "unknown date";
+      priceContext = `\n\nHere is the price data from nearby stores (last updated: ${dateLabel}). Always include this disclaimer when showing prices: "⚠️ Prices last updated ${dateLabel} — verify with the store before your trip."\n\n${JSON.stringify(priceData, null, 2)}`;
     }
 
     const history = getRecentMessages(6);
