@@ -2,5 +2,4 @@
 .env.local
 .next/
 node_modules/
-smartshop.db
 auth-data.json
