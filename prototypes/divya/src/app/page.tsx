@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AuthPanel } from "@/components/AuthPanel";
+import { ChatHeaderAuth } from "@/components/ChatHeaderAuth";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authHint, setAuthHint] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,9 +62,24 @@ export default function Home() {
     setError("");
   }
 
-  function returnToHome() {
+  const returnToHome = useCallback(() => {
     void resetChat();
     setStarted(false);
+  }, []);
+
+  async function handleStartShopping() {
+    setAuthHint("");
+    try {
+      const res = await fetch("/api/auth/session", { credentials: "include" });
+      const data = await res.json();
+      if (!data.user) {
+        setAuthHint("Please log in or sign up in Your account below before starting.");
+        return;
+      }
+      setStarted(true);
+    } catch {
+      setAuthHint("Could not verify your session. Please try logging in again.");
+    }
   }
 
   if (!started) {
@@ -105,10 +122,16 @@ export default function Home() {
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="font-semibold text-lg text-gray-800 mb-4 text-center">Your account</h2>
-            <AuthPanel variant="card" />
+            <AuthPanel />
           </div>
+          {authHint && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-center">
+              {authHint}
+            </p>
+          )}
           <button
-            onClick={() => setStarted(true)}
+            type="button"
+            onClick={() => void handleStartShopping()}
             className="bg-green-600 hover:bg-green-700 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow transition-colors w-full sm:w-auto"
           >
             Start Shopping →
@@ -127,7 +150,7 @@ export default function Home() {
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
-          <AuthPanel variant="header" onLogout={returnToHome} />
+          <ChatHeaderAuth onLogout={returnToHome} onUnauthorized={returnToHome} />
           <Link
             href="/similar-alternatives"
             className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
