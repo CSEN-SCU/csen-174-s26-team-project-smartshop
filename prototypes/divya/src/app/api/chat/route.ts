@@ -2,14 +2,14 @@ import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import { getPricesForItems, saveMessage, getRecentMessages } from "@/lib/db";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error(
-    "Missing OPENAI_API_KEY. Create a .env.local file in this directory and add: OPENAI_API_KEY=your_key_here\n" +
-      "Get your key at: https://platform.openai.com/api-keys"
-  );
+function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error(
+      "Missing OPENAI_API_KEY. Add it in your Vercel project settings under Environment Variables."
+    );
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MODEL = "gpt-4.1-mini";
 
@@ -41,6 +41,7 @@ function parseItemArray(raw: string): string[] {
 }
 
 async function extractGroceryItems(message: string): Promise<string[]> {
+  const openai = getOpenAI();
   const res = await openai.responses.create({
     model: MODEL,
     input: [
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: message + priceContext },
     ];
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: MODEL,
       messages,
     });
