@@ -1,51 +1,86 @@
-Date: May 26, 2026
-Team: Divya Bengali, Shreeya Koritala, Caroline Tapia, Terry Chen
+# Week 9 — Ethics Reflection and Code Freeze
 
-Week 9 - Ethics Reflection and Code Freeze
+**Team:** Divya Bengali, Shreeya Koritala, Caroline Tapia, Terry Chen  
+**Course:** CSEN 174 · **Date:** June 1, 2026  
+**Product:** SmartShop (class prototype, not production software)
 
-## Product Vision:
-### FOR
-grocery shoppers
-### WHO
-want to save money/are on a budget.
-### THE
-Smart Shop app
-### THAT
-Compares prices of groceries across different stores in the area and shows the user the most affordable option
-### UNLIKE
-Honey, the browser extension, that looks for online coupons. And unlike manually checking each store’s app/website (or just shopping at one store and hoping it’s cheapest).
-### OUR PRODUCT
-shows both prices and distance to the grocery store and helps users decide whether a lower price is actually worth the extra trip. Smart Shop automatically finds the lowest local price for the exact item you want across multiple stores so you don’t overpay for the same thing. Our product is POWERED BY AI that will read the text that the user inputs into the app and search the database to search for the most affordable options. 
-### Stakeholders:
-#### User group: 
-Grocery shoppers on a budget who want an easier way to compare prices between nearby stores and save money on everyday purchases.
-#### Non-user group: 
-Grocery stores and retailers whose pricing data is collected and compared by the app, since the platform may influence where customers choose to shop without the stores directly using the product and we are getting the pricing information from scrapers. 
+---
 
-## Potential Harms: 
+## 1. Product vision (Moore template)
 
-### Harm 1: 
-Grocery shoppers could receive outdated or incorrect prices from stores, causing them to waste time or money traveling to a store expecting a lower price that is no longer available.
-#### Principle: 
-IEEE Code 1 & 5 “to hold paramount the safety, health, and welfare of the public… and to be honest and realistic in stating claims based on available data.”
-#### Mitigation: 
-The team will regularly update scraped pricing data, include timestamps showing when prices were last updated, and display a disclaimer that prices may change in-store. Before demo night, we will test the scraper across multiple stores to improve accuracy.
-____________________
-### Harm 2: Grocery stores could be harmed if incorrect pricing information makes them appear more expensive than competitors, potentially damaging their reputation or reducing customer traffic.
-#### Principle: 
-IEEE Code 9 “to avoid injuring others, their property, reputation, or employment by false or malicious actions.”
-#### Mitigation: 
-The team will verify pricing information before displaying it and allow corrections to be made quickly if errors are discovered. We will also avoid making misleading claims about stores and provide users with direct links or references to original store pricing when possible.
-____________________
-### Harm 3: Users’ location data or shopping habits could be exposed or misused, affecting their privacy and making users less comfortable using the app.
-#### Principle: 
-IEEE Code 1 “to protect the privacy of others.”
-#### Mitigation: 
-The app will collect only the minimum location data (zip code) needed to compare nearby stores and will not store unnecessary personal information. Before demo night, the team will ensure that user data is not shared with third parties and that privacy protections are clearly explained to users.
-____________________
-### Positive Impact: 
-Smart Shop could create value for low-income families and college students who may not have the time or transportation flexibility to compare grocery prices across multiple stores. To better serve this group, the team decided to include both price comparisons and distance-to-store information so users can judge whether traveling farther for a cheaper item is actually worthwhile. This design choice helps users balance transportation costs, time, and savings rather than only focusing on the lowest listed price. The tradeoff is that adding location-based features increases development complexity and requires handling user location data carefully to protect privacy.
+**FOR** budget-conscious grocery shoppers  
+**WHO** need to stretch a food budget without spending hours comparing stores  
+**THE** SmartShop app  
+**IS A** local grocery comparison assistant  
+**THAT** surfaces prices, store distance, and availability so shoppers can judge whether a cheaper item is worth the extra trip  
+**UNLIKE** coupon browser extensions (online-only deals) or manually opening each store’s app or website one by one  
+**OUR PRODUCT** combines multi-store price comparison with distance as a first-class input, and helps match equivalent items from user-entered grocery lists or item descriptions instead of forcing users to reconcile different product names themselves  
 
+**POWERED BY** AI that interprets user text or images, queries our prototype database (and, in some team builds, scraped or sample store data), and returns a conversational recommendation—not a guarantee of what will ring up at the register.
 
-### One Concrete Change: 
-The team decided to add a disclaimer and timestamp next to all displayed grocery prices so users can see when the data was last updated, because ethical reasoning showed that outdated pricing information could mislead users and cause them to waste time or money.
+---
+
+## 2. Stakeholders
+
+### User group: budget-conscious grocery shoppers
+
+College students and busy families who plan trips around cost and time. They use SmartShop to decide *where* to shop and *whether* savings justify travel. A wrong recommendation can mean wasted bus fare, a missed dinner ingredient, or overspending when they trusted stale data.
+
+### Non-user group: local grocery stores and employees
+
+Stores do not log into SmartShop, but their listed prices and stock levels shape where customers go. Employees may face frustrated shoppers if our data is wrong, and small stores may be misrepresented if scrapers or AI matching pick the wrong SKU or an outdated promo price.
+
+---
+
+## 3. Potential harms
+
+### Harm 1 — Inaccurate price or inventory data
+
+| | |
+|---|---|
+| **Harm** | Shoppers are harmed when they travel to a store expecting a low price or in-stock item that is no longer true. Stores and staff are harmed when customers arrive angry about “your app said it was $2.99.” |
+| **Principle** | **1.03** — Approve software only if there is a well-founded belief that it is safe, meets specifications, and does not diminish quality of life or harm users |
+| **Mitigation** | **Done / before demo:** Prototype data is labeled as sample or time-stamped where implemented; chat prompts ask the model to admit missing items. **Before demo night:** Re-run scraper or seed scripts on demo stores and add visible “last updated” copy. **Accepted:** We will not claim real-time accuracy—this is a class demo, not a pricing authority. |
+
+### Harm 2 — Overconfident AI recommendations
+
+| | |
+|---|---|
+| **Harm** | Users treat a friendly AI reply as ground truth—e.g., “definitely shop at Store A”—and buy the wrong size, brand, or “equivalent” product (especially risky for allergies or dietary needs called out in our Problem Framing Canvas). |
+| **Principle** | **6.03** — Not give misleading information about software or related documents |
+| **Mitigation** | **Done:** System prompts stress price *and* distance and cap response length; similar-alternatives flows document confidence limits in code comments and UI copy. **Before demo night:** Add one-line disclaimer on chat results (“verify in store”). **Accepted:** Full nutrition/allergy guardrails are out of scope for the prototype; we document that substitutions are not medical advice. |
+
+### Harm 3 — Crisis or sensitive disclosures handled like normal grocery chat
+
+| | |
+|---|---|
+| **Harm** | Someone mentions self-harm, crisis, or being a minor in the same chat box used for “eggs and milk.” If we save that text and send it to an LLM, we could store sensitive content, get an inappropriate grocery reply, and fail a basic duty of care—even in a class project. |
+| **Principle** | **1.05** — Cooperate in addressing matters of grave public concern caused by software |
+| **Mitigation** | **Done (Week 7 Responsible AI remediation):** See concrete change below. **Before demo night:** Manually retest crisis phrases on the demo build. **Accepted:** Keyword matching will miss some cases and may false-positive; we treat the gate as a minimum bar, not clinical triage. |
+
+---
+
+## 4. One concrete ethical change
+
+**Change:** Crisis detection runs **before** any side effects in the grocery chat API.
+
+We added `detectCrisisMessage(message)` (implemented as a pattern-matching gate in our chat route): if the user message matches crisis or sensitive patterns (self-harm language, suicidal ideation, minor age disclosure), the handler **immediately** returns a fixed `CRISIS_RESPONSE` with U.S. crisis resources (988, Crisis Text Line). It does **not** write the message to the database or invoke Gemini or other model APIs.
+
+```ts
+if (detectCrisisMessage(message)) {
+  return NextResponse.json({ reply: CRISIS_RESPONSE });
+}
+// only then: saveMessage(...), extract items, call model
+```
+
+This directly addresses Harm 3: sensitive text is not persisted or forwarded for grocery completion.
+
+**Location:** `prototypes/divya/src/app/api/chat/route.ts` (pattern-matching gate; documented in `docs/sprint-2-remediations.md`).
+
+---
+
+## Code freeze (Week 9)
+
+After code freeze, our team will treat SmartShop as **feature-complete for the course**. Further changes are limited to **bug fixes, deployment fixes, copy edits, accessibility fixes, security patches, and last-mile polish** only—no new features or refactors unless an instructor approves an exception.
+
+**Deployed URL:** [paste final live app URL here]
