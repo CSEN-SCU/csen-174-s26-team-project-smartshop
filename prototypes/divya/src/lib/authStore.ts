@@ -5,7 +5,10 @@
 import fs from "fs";
 import path from "path";
 
-const AUTH_DATA_PATH = path.join(process.cwd(), "auth-data.json");
+// Use /tmp so writes work on Vercel (read-only filesystem outside /tmp)
+const AUTH_DATA_PATH = process.env.NODE_ENV === "production"
+  ? "/tmp/auth-data.json"
+  : path.join(process.cwd(), "auth-data.json");
 
 export type AuthUser = { id: number; email: string; password_hash: string };
 
