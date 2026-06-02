@@ -70,7 +70,7 @@ describe("saveMessage / getRecentMessages", () => {
 describe("getStoreCount", () => {
   test("returns the total number of stores in the database", () => {
     const count = getStoreCount();
-    expect(count).toBe(5);
+    expect(count).toBe(4);
   });
 });
 

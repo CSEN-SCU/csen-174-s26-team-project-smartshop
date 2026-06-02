@@ -18,20 +18,18 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MODEL = "gpt-4.1-mini";
 
-const SYSTEM_PROMPT = `You are SmartShop, a grocery price comparison assistant. When a user mentions grocery items, you receive reference price data for generic categories from a local database. Use it as a guide for realistic pricing and which nearby stores to cite.
+const SYSTEM_PROMPT = `You are SmartShop, a grocery price comparison assistant. When a user mentions grocery items, you receive REAL product price data scraped from nearby stores. Each entry has a specific product name, brand, size (unit), price, store, and distance.
 
-OUTPUT FORMAT — do NOT write conversational sentences, greetings, paragraphs, intros, or sign-offs. Output ONLY a markdown bullet list of SPECIFIC products. For each grocery item the user asks about, suggest 1 to 3 specific real-world products, each on its own line in exactly this format:
+OUTPUT FORMAT — do NOT write conversational sentences, greetings, paragraphs, intros, or sign-offs. Output ONLY a markdown bullet list. For each product, output one line in exactly this format:
 
-- **<Brand> <Product name>, <size>** — $<price> at <Store> (<distance> mi) · <brief ingredient/detail note>
+- **<Brand> <Product name>, <size>** — $<price> at <Store> (<distance> mi)
 
 Rules:
-- Always recommend SPECIFIC branded products with brand, name, and size. Example: "Skippy Chunky Peanut Butter, 16 oz" or "Jif Natural Peanut Butter, 16 oz" — never just "peanut butter".
-- EXCEPTION: fresh produce (fruits and vegetables) may be generic, e.g. "Bananas, per lb".
-- Use the reference price data to anchor realistic prices and stores. If a specific product is not in the reference data, give a realistic estimated price and pick a plausible nearby store from this list: Trader Joe's (0.8 mi), Safeway (1.2 mi), Whole Foods (2.1 mi), Target (1.7 mi), Costco (3.4 mi).
-- Choose good overall value (balance price AND distance).
-- The ingredient/detail note must be short (a few words): key ingredients, type, or attribute (e.g. "creamy, roasted peanuts", "100% durum wheat", "cage-free"). No full sentences.
-- Never output "not found" for common grocery items — always suggest a real specific product.
-- No intros, summaries, or follow-up questions. Just the bullet list.`;
+- Use ONLY the products in the provided price data. Do NOT invent products, brands, sizes, or prices, and do NOT estimate. Every brand, product name, size, and price you output must come verbatim from the data.
+- For each grocery item the user asked about, show the best 1 to 3 options by overall value (balance price AND distance).
+- If the brand is empty, just use the product name and size.
+- If an item the user asked about has NO entries in the provided data, output exactly: "- <item> — not available at nearby stores yet".
+- No intros, summaries, ingredient notes, or follow-up questions. Just the bullet list.`;
 
 function parseItemArray(raw: string): string[] {
   const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
@@ -126,7 +124,20 @@ export async function POST(req: NextRequest) {
     let priceContext = "";
     if (items.length > 0) {
       const priceData = getPricesForItems(items);
-      priceContext = `\n\nHere is the current price data from nearby stores:\n${JSON.stringify(priceData, null, 2)}`;
+
+      // Pre-filter: drop any scraped product that conflicts with the shopper's
+      // restrictions so the model never even sees a non-compliant option.
+      if (restrictionIds.length > 0) {
+        for (const key of Object.keys(priceData)) {
+          priceData[key] = priceData[key].filter((row) => {
+            const label = `${row.brand} ${row.product} ${row.unit}`.trim();
+            return findDietaryConflicts([label], restrictionIds).length === 0;
+          });
+          if (priceData[key].length === 0) delete priceData[key];
+        }
+      }
+
+      priceContext = `\n\nHere is the current product price data scraped from nearby stores (use ONLY these products):\n${JSON.stringify(priceData, null, 2)}`;
     }
 
     const history = getRecentMessages(6);
