@@ -1,9 +1,8 @@
 /**
- * File-backed auth users (works locally; writable project dir).
- * Session state is in signed cookies (see session.ts), not this file.
- * On Vercel, accounts in this file may not persist across instances;
- * login falls back to the signed profile cookie set at signup/login.
+ * Local dev: users in auth-data.json (writable project dir).
+ * Vercel/serverless: no file writes — accounts live in signed HttpOnly cookies (session.ts).
  */
+import { createHmac } from "crypto";
 import fs from "fs";
 import path from "path";
 
@@ -15,6 +14,17 @@ type AuthDataFile = {
   nextUserId: number;
   users: AuthUser[];
 };
+
+export function usesFileAuthStore(): boolean {
+  return !process.env.VERCEL;
+}
+
+/** Stable id for the same email on serverless (cookie-backed accounts). */
+export function stableUserId(email: string): number {
+  const digest = createHmac("sha256", "smartshop-prototype-user-id").update(email).digest();
+  const id = digest.readUInt32BE(0);
+  return id === 0 ? 1 : id;
+}
 
 function defaultData(): AuthDataFile {
   return { nextUserId: 1, users: [] };
@@ -39,6 +49,10 @@ function writeAuthData(data: AuthDataFile): void {
 }
 
 export function createUser(email: string, passwordHash: string): AuthUser {
+  if (!usesFileAuthStore()) {
+    return { id: stableUserId(email), email, password_hash: passwordHash };
+  }
+
   const data = readAuthData();
   if (data.users.some((u) => u.email === email)) {
     throw new Error("EMAIL_EXISTS");
@@ -54,6 +68,7 @@ export function createUser(email: string, passwordHash: string): AuthUser {
 }
 
 export function findUserByEmail(email: string): AuthUser | undefined {
+  if (!usesFileAuthStore()) return undefined;
   const data = readAuthData();
   return data.users.find((u) => u.email === email);
 }

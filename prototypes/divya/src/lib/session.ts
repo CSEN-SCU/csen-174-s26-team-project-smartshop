@@ -39,20 +39,31 @@ export function startSession(
 }
 
 export function endSession(res: NextResponse): NextResponse {
+  // Logout clears active session only — profile cookie keeps the prototype account for re-login.
   return clearSessionCookie(res);
 }
 
-/**
- * Login fallback when SQLite user row is missing (common on Vercel serverless).
- * Uses the signed profile cookie set at signup/login on this browser.
- */
-export function resolveUserForLogin(email: string, password: string): AuthUser | null {
-  const fromDb = findUserByEmail(email);
-  if (fromDb && verifyPassword(password, fromDb.password_hash)) return fromDb;
-
+function profileFromCookies(): ReturnType<typeof verifyProfileToken> {
   const profileToken = cookies().get(PROFILE_COOKIE)?.value;
   if (!profileToken) return null;
-  const profile = verifyProfileToken(profileToken);
+  return verifyProfileToken(profileToken);
+}
+
+/** True if email exists in auth-data.json (local) or this browser's signed profile cookie. */
+export function emailHasSavedAccount(email: string): boolean {
+  if (findUserByEmail(email)) return true;
+  const profile = profileFromCookies();
+  return profile?.email === email;
+}
+
+/**
+ * Login: local file store first, then signed profile cookie (required on Vercel).
+ */
+export function resolveUserForLogin(email: string, password: string): AuthUser | null {
+  const fromFile = findUserByEmail(email);
+  if (fromFile && verifyPassword(password, fromFile.password_hash)) return fromFile;
+
+  const profile = profileFromCookies();
   if (!profile || profile.email !== email) return null;
   if (!verifyPassword(password, profile.passwordHash)) return null;
   return {

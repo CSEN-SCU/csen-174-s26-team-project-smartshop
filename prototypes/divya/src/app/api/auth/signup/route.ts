@@ -4,8 +4,8 @@ import {
   normalizeEmail,
   validateCredentials,
 } from "@/lib/auth";
-import { createUser, findUserByEmail } from "@/lib/authStore";
-import { startSession } from "@/lib/session";
+import { createUser } from "@/lib/authStore";
+import { emailHasSavedAccount, startSession } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    if (findUserByEmail(email)) {
+    if (emailHasSavedAccount(email)) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
     }
 

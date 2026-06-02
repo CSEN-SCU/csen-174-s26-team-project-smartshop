@@ -106,7 +106,7 @@ const cookieOptions = {
   sameSite: "lax" as const,
   path: "/",
   maxAge: SESSION_DAYS * 24 * 60 * 60,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
 };
 
 export function attachSessionCookie(res: NextResponse, token: string): NextResponse {

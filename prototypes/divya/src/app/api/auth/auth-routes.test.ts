@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 
 const mockCreateUser = jest.fn();
-const mockFindUserByEmail = jest.fn();
+const mockEmailHasSavedAccount = jest.fn();
 const mockResolveUserForLogin = jest.fn();
 const mockStartSession = jest.fn(
   (_userId: number, _email: string, _hash: string, res: Response) => res,
@@ -11,7 +11,6 @@ const mockGetSessionUser = jest.fn();
 
 jest.mock("@/lib/authStore", () => ({
   createUser: (...args: unknown[]) => mockCreateUser(...args),
-  findUserByEmail: (...args: unknown[]) => mockFindUserByEmail(...args),
 }));
 
 jest.mock("@/lib/session", () => ({
@@ -19,6 +18,7 @@ jest.mock("@/lib/session", () => ({
     mockStartSession(userId, email, hash, res),
   endSession: (res: Response) => mockEndSession(res),
   getSessionUserFromCookies: () => mockGetSessionUser(),
+  emailHasSavedAccount: (...args: unknown[]) => mockEmailHasSavedAccount(...args),
   resolveUserForLogin: (...args: unknown[]) => mockResolveUserForLogin(...args),
 }));
 
@@ -33,7 +33,7 @@ describe("auth API routes", () => {
   });
 
   test("signup creates user and starts session", async () => {
-    mockFindUserByEmail.mockReturnValue(undefined);
+    mockEmailHasSavedAccount.mockReturnValue(false);
     mockCreateUser.mockReturnValue({ id: 1, email: "maya@school.edu", password_hash: "x" });
 
     const req = new NextRequest("http://localhost/api/auth/signup", {
@@ -55,7 +55,7 @@ describe("auth API routes", () => {
   });
 
   test("signup returns 409 when email exists", async () => {
-    mockFindUserByEmail.mockReturnValue({ id: 1, email: "taken@school.edu", password_hash: "x" });
+    mockEmailHasSavedAccount.mockReturnValue(true);
 
     const req = new NextRequest("http://localhost/api/auth/signup", {
       method: "POST",
