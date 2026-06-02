@@ -4,11 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 type User = { id: number; email: string };
 
-type AuthPanelProps = {
-  compact?: boolean;
-};
-
-export function AuthPanel({ compact = false }: AuthPanelProps) {
+/** Full account card for the home page only (login / signup / logout). */
+export function AuthPanel() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -74,14 +71,12 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
   }
 
   if (loading) {
-    return (
-      <p className={`text-sm text-gray-500 ${compact ? "" : "text-center"}`}>Checking session…</p>
-    );
+    return <p className="text-sm text-gray-500 text-center">Checking session…</p>;
   }
 
   if (user) {
     return (
-      <div className={`flex ${compact ? "flex-row items-center gap-2" : "flex-col items-center gap-2"}`}>
+      <div className="flex flex-col items-center gap-2">
         <span className="text-sm text-gray-700">
           Signed in as <strong className="text-green-800">{user.email}</strong>
         </span>
@@ -98,7 +93,7 @@ export function AuthPanel({ compact = false }: AuthPanelProps) {
   }
 
   return (
-    <div className={`w-full ${compact ? "max-w-md" : "max-w-sm mx-auto"}`}>
+    <div className="w-full max-w-sm mx-auto">
       <div className="flex gap-2 mb-3 justify-center">
         <button
           type="button"
