@@ -114,7 +114,14 @@ export async function POST(req: NextRequest) {
 
     const allergenList = Array.isArray(allergens) && allergens.length > 0 ? allergens : [];
     const allergenNote = allergenList.length > 0
-      ? `\n\nIMPORTANT: This user has the following allergens: ${allergenList.join(", ")}. If any grocery item they ask about commonly contains one of these allergens, warn them clearly before giving the price info. For example, if they ask about bread and they have a gluten allergy, say "⚠️ Heads up — bread commonly contains gluten, which is one of your allergens. Still want the prices?" then give the prices.`
+      ? `\n\nIMPORTANT — ALLERGEN AWARENESS: This user is allergic to: ${allergenList.join(", ")}. You must think carefully about what each grocery item is made from and warn if there is any connection. Use broad ingredient knowledge — for example:
+- gluten is found in wheat, so pasta, bread, flour, crackers, cereal, soy sauce, and beer all contain gluten
+- dairy includes milk, butter, cheese, yogurt, cream, whey, and casein
+- peanuts may be present in peanut butter, mixed nuts, some sauces, and candy
+- eggs are in mayonnaise, pasta (some types), baked goods, and dressings
+- soy is in tofu, edamame, soy sauce, miso, and many processed foods
+- tree nuts include almonds, cashews, walnuts, pecans, etc.
+If an item the user asks about commonly contains or is derived from one of their allergens, warn them with "⚠️ Allergen warning — [item] commonly contains [allergen]." before giving prices. Do not skip this warning even if the item seems obvious.`
       : "";
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
