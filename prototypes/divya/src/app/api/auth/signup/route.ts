@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
       user: { id: user.id, email: user.email },
     });
-    return startSession(user.id, res);
-  } catch (err: unknown) {
-    console.error("Signup error:", err);
+    return startSession(user.id, user.email, user.password_hash, res);
+  } catch (error: unknown) {
+    console.error("Signup failed:", error);
     return NextResponse.json({ error: "Signup failed" }, { status: 500 });
   }
 }

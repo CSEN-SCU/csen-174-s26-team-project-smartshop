@@ -1,13 +1,31 @@
 import Database from "better-sqlite3";
+import fs from "fs";
 import path from "path";
 
-const DB_PATH = path.join(process.cwd(), "smartshop.db");
+function resolveDbPath(): string {
+  // Vercel serverless: project dir is read-only; /tmp is writable per instance.
+  if (process.env.VERCEL) {
+    return path.join("/tmp", "smartshop.db");
+  }
+  return path.join(process.cwd(), "smartshop.db");
+}
+
+function ensureDbFile(dbPath: string): void {
+  if (fs.existsSync(dbPath)) return;
+  const bundled = path.join(process.cwd(), "smartshop.db");
+  if (bundled !== dbPath && fs.existsSync(bundled)) {
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    fs.copyFileSync(bundled, dbPath);
+  }
+}
 
 let db: Database.Database;
 
 export function getDb(): Database.Database {
   if (!db) {
-    db = new Database(DB_PATH);
+    const dbPath = resolveDbPath();
+    ensureDbFile(dbPath);
+    db = new Database(dbPath);
     db.pragma("journal_mode = WAL");
     initSchema(db);
     seedData(db);

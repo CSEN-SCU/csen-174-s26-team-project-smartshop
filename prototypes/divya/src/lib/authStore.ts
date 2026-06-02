@@ -1,6 +1,8 @@
 /**
- * File-backed user/session store for auth (no native SQLite required).
- * Grocery catalog data remains in better-sqlite3 via db.ts.
+ * File-backed auth users (works locally; writable project dir).
+ * Session state is in signed cookies (see session.ts), not this file.
+ * On Vercel, accounts in this file may not persist across instances;
+ * login falls back to the signed profile cookie set at signup/login.
  */
 import fs from "fs";
 import path from "path";
@@ -12,11 +14,10 @@ export type AuthUser = { id: number; email: string; password_hash: string };
 type AuthDataFile = {
   nextUserId: number;
   users: AuthUser[];
-  sessions: { id: string; user_id: number; expires_at: string }[];
 };
 
 function defaultData(): AuthDataFile {
-  return { nextUserId: 1, users: [], sessions: [] };
+  return { nextUserId: 1, users: [] };
 }
 
 function readAuthData(): AuthDataFile {
@@ -27,7 +28,6 @@ function readAuthData(): AuthDataFile {
     return {
       nextUserId: parsed.nextUserId ?? 1,
       users: parsed.users ?? [],
-      sessions: parsed.sessions ?? [],
     };
   } catch {
     return defaultData();
@@ -56,31 +56,4 @@ export function createUser(email: string, passwordHash: string): AuthUser {
 export function findUserByEmail(email: string): AuthUser | undefined {
   const data = readAuthData();
   return data.users.find((u) => u.email === email);
-}
-
-export function createSession(token: string, userId: number, expiresAt: string): void {
-  const data = readAuthData();
-  data.sessions.push({ id: token, user_id: userId, expires_at: expiresAt });
-  writeAuthData(data);
-}
-
-export function deleteSession(token: string): void {
-  const data = readAuthData();
-  data.sessions = data.sessions.filter((s) => s.id !== token);
-  writeAuthData(data);
-}
-
-export function findSessionUser(
-  token: string,
-): { user_id: number; email: string; expires_at: string } | undefined {
-  const data = readAuthData();
-  const session = data.sessions.find((s) => s.id === token);
-  if (!session) return undefined;
-  const user = data.users.find((u) => u.id === session.user_id);
-  if (!user) return undefined;
-  return {
-    user_id: user.id,
-    email: user.email,
-    expires_at: session.expires_at,
-  };
 }
