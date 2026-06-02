@@ -62,7 +62,7 @@ async function extractGroceryItems(message: string): Promise<string[]> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, reset } = await req.json();
+    const { message, reset, allergens } = await req.json();
 
     if (reset) {
       const { clearMessages } = await import("@/lib/db");
@@ -109,8 +109,13 @@ export async function POST(req: NextRequest) {
     const history = getRecentMessages(6);
     const prior = history.slice(0, -1);
 
+    const allergenList = Array.isArray(allergens) && allergens.length > 0 ? allergens : [];
+    const allergenNote = allergenList.length > 0
+      ? `\n\nIMPORTANT: This user has the following allergens: ${allergenList.join(", ")}. If any grocery item they ask about commonly contains one of these allergens, warn them clearly before giving the price info. For example, if they ask about bread and they have a gluten allergy, say "⚠️ Heads up — bread commonly contains gluten, which is one of your allergens. Still want the prices?" then give the prices.`
+      : "";
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + allergenNote },
       ...prior.map((m) => ({
         role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
         content: m.content,
