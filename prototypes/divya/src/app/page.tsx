@@ -69,19 +69,9 @@ export default function Home() {
     setStarted(false);
   }, []);
 
-  async function handleStartShopping() {
+  function handleStartShopping() {
     setAuthHint("");
-    try {
-      const res = await fetch("/api/auth/session", { credentials: "include" });
-      const data = await res.json();
-      if (!data.user) {
-        setAuthHint("Please log in or sign up in Your account below before starting.");
-        return;
-      }
-      setStarted(true);
-    } catch {
-      setAuthHint("Could not verify your session. Please try logging in again.");
-    }
+    setStarted(true);
   }
 
   if (!started) {
