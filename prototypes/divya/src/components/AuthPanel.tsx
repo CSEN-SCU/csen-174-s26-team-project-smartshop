@@ -92,11 +92,6 @@ export function AuthPanel() {
     );
   }
 
-  // In compact (header) mode, don't show the login form — just a quiet hint
-  if (compact) {
-    return null;
-  }
-
   return (
     <div className="w-full max-w-sm mx-auto">
       <div className="flex gap-2 mb-3 justify-center">
