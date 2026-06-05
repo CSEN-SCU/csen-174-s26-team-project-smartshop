@@ -1,8 +1,79 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 
 export const SESSION_COOKIE = "smartshop_session";
+export const PROFILE_COOKIE = "smartshop_auth_profile";
 const SESSION_DAYS = 14;
+
+function authSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    console.warn("AUTH_SECRET is not set; using insecure fallback for demo only");
+  }
+  return "smartshop-dev-auth-secret";
+}
+
+function signPayload(payload: object): string {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = createHmac("sha256", authSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+function verifyPayload<T extends { exp: number }>(token: string): T | null {
+  const dot = token.lastIndexOf(".");
+  if (dot < 0) return null;
+  const body = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+  const expected = createHmac("sha256", authSecret()).update(body).digest("base64url");
+  try {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  } catch {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString()) as T;
+    if (payload.exp < Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export type SessionPayload = { userId: number; email: string; exp: number };
+export type ProfilePayload = {
+  userId: number;
+  email: string;
+  passwordHash: string;
+  exp: number;
+};
+
+export function signSessionToken(userId: number, email: string): string {
+  return signPayload({
+    userId,
+    email,
+    exp: Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000,
+  });
+}
+
+export function verifySessionToken(token: string): SessionPayload | null {
+  return verifyPayload<SessionPayload>(token);
+}
+
+export function signProfileToken(userId: number, email: string, passwordHash: string): string {
+  return signPayload({
+    userId,
+    email,
+    passwordHash,
+    exp: Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000,
+  });
+}
+
+export function verifyProfileToken(token: string): ProfilePayload | null {
+  return verifyPayload<ProfilePayload>(token);
+}
 
 export type PublicUser = { id: number; email: string };
 
@@ -35,7 +106,7 @@ const cookieOptions = {
   sameSite: "lax" as const,
   path: "/",
   maxAge: SESSION_DAYS * 24 * 60 * 60,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
 };
 
 export function attachSessionCookie(res: NextResponse, token: string): NextResponse {
@@ -43,8 +114,18 @@ export function attachSessionCookie(res: NextResponse, token: string): NextRespo
   return res;
 }
 
+export function attachProfileCookie(res: NextResponse, token: string): NextResponse {
+  res.cookies.set(PROFILE_COOKIE, token, cookieOptions);
+  return res;
+}
+
 export function clearSessionCookie(res: NextResponse): NextResponse {
   res.cookies.set(SESSION_COOKIE, "", { ...cookieOptions, maxAge: 0 });
+  return res;
+}
+
+export function clearProfileCookie(res: NextResponse): NextResponse {
+  res.cookies.set(PROFILE_COOKIE, "", { ...cookieOptions, maxAge: 0 });
   return res;
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AuthPanel } from "@/components/AuthPanel";
+import { ChatHeaderAuth } from "@/components/ChatHeaderAuth";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authHint, setAuthHint] = useState("");
   const [allergenInput, setAllergenInput] = useState("");
   const [allergens, setAllergens] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -60,6 +62,26 @@ export default function Home() {
     });
     setMessages([]);
     setError("");
+  }
+
+  const returnToHome = useCallback(() => {
+    void resetChat();
+    setStarted(false);
+  }, []);
+
+  async function handleStartShopping() {
+    setAuthHint("");
+    try {
+      const res = await fetch("/api/auth/session", { credentials: "include" });
+      const data = await res.json();
+      if (!data.user) {
+        setAuthHint("Please log in or sign up in Your account below before starting.");
+        return;
+      }
+      setStarted(true);
+    } catch {
+      setAuthHint("Could not verify your session. Please try logging in again.");
+    }
   }
 
   if (!started) {
@@ -140,8 +162,14 @@ export default function Home() {
               </div>
             )}
           </div>
+          {authHint && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-center">
+              {authHint}
+            </p>
+          )}
           <button
-            onClick={() => setStarted(true)}
+            type="button"
+            onClick={() => void handleStartShopping()}
             className="bg-green-600 hover:bg-green-700 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow transition-colors w-full sm:w-auto"
           >
             Start Shopping →
@@ -154,23 +182,33 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col max-w-2xl mx-auto">
-      <header className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-3 z-10">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🛒</span>
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
-        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-          <AuthPanel compact />
-          <div className="flex gap-2 items-center flex-wrap justify-end">
-            <Link
-              href="/similar-alternatives"
-              className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
-            >
-              Similar alt.
-            </Link>
-            <button onClick={resetChat} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">New chat</button>
-            <button onClick={() => { resetChat(); setStarted(false); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">Home</button>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
+          <ChatHeaderAuth onLogout={returnToHome} onUnauthorized={returnToHome} />
+          <Link
+            href="/similar-alternatives"
+            className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"
+          >
+            Similar alt.
+          </Link>
+          <button
+            type="button"
+            onClick={() => void resetChat()}
+            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            New chat
+          </button>
+          <button
+            type="button"
+            onClick={returnToHome}
+            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            Home
+          </button>
         </div>
       </header>
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
