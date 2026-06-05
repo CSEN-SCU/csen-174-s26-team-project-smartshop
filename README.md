@@ -11,3 +11,6 @@ SmartShop helps budget-conscious grocery shoppers compare grocery prices across 
 - Shreeya Koritala
 - Caroline Tapia
 - Terry Chen
+
+## Demo Link 
+https://youtu.be/8MrIPAatn1I
