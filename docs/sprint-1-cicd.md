@@ -16,7 +16,7 @@ The workflow lives at `.github/workflows/ci.yml`. It triggers on every `pull_req
 
 ## Part 2: Live Deployment
 
-**Live URL:** https://csen-174-s26-team-project-smartshop.vercel.app
+**Live URL:** [https://csen-174-s26-team-project-smartshop.vercel.app](https://divya-ten-vert.vercel.app/)
 
 **Screenshot:** _(see Vercel dashboard screenshot — Status: Ready, Build Logs: ✅ 1m 11s)_
 
