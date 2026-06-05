@@ -188,7 +188,7 @@ export default function Home() {
           <span className="font-bold text-green-700 text-lg">SmartShop</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end min-w-0">
-          <ChatHeaderAuth onLogout={returnToHome} onUnauthorized={returnToHome} />
+          <ChatHeaderAuth onLogout={returnToHome} onUnauthorized={() => {}} />
           <Link
             href="/similar-alternatives"
             className="text-sm text-green-600 hover:text-green-800 px-3 py-1 rounded-lg hover:bg-green-50 transition-colors"

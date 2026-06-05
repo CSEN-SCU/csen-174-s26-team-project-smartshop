@@ -98,14 +98,16 @@ export async function POST(req: NextRequest) {
 
   // Off-topic guard — block non-grocery questions
   const OFF_TOPIC_PATTERNS = [
-    /homework|assignment|essay|exam|quiz|test\s+(question|help|me)/i,
+    /homework|assignment|essay|exam|quiz/i,
+    /quadratic|equation|derivative|integral|calculus|algebra|geometry|trigonometry|theorem/i,
     /write\s+(my|a|an|the)\s+(essay|report|paper|code|program|function|class)/i,
-    /solve\s+(this|my|the)\s+(problem|equation|math)/i,
-    /what\s+is\s+the\s+(capital|population|president|history)/i,
+    /solve\s+(this|my|the)?\s*(problem|equation|math)/i,
+    /what\s+is\s+the\s+(capital|population|president|history|formula|speed|distance)/i,
     /how\s+do\s+(you|i)\s+(code|program|build|make)\s+(?!a grocery|a shopping|a meal)/i,
     /tell\s+me\s+(a\s+joke|about\s+yourself|a\s+story)/i,
     /who\s+(are\s+you|made\s+you|created\s+you)/i,
-    /weather|news|sports|politics|stock|crypto/i,
+    /weather|news|sports|politics|stock|crypto|bitcoin/i,
+    /\bmath\b|\bscience\b|\bhistory\b|\bgeography\b|\bphysics\b|\bchemistry\b|\bbiology\b/i,
   ];
   const OFF_TOPIC_RESPONSE = "I'm only able to help with grocery shopping and price comparisons! Try asking me something like \"where can I find the cheapest eggs?\" or \"compare milk prices near me.\"";
   if (OFF_TOPIC_PATTERNS.some((p) => p.test(message))) {
