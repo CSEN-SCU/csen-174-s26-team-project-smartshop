@@ -14,3 +14,6 @@ SmartShop helps budget-conscious grocery shoppers compare grocery prices across 
 
 ## Demo Link 
 https://youtu.be/8MrIPAatn1I
+
+##Link to Technical Report:
+https://github.com/CSEN-SCU/csen-174-s26-team-project-smartshop/blob/main/docs/TECHNICAL_REPORT.md 
